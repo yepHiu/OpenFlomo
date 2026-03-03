@@ -1,0 +1,254 @@
+// OpenFlomo 清新明亮主题配色
+
+:root {
+  // 主色调
+  --primary-color: #4FC3F7;
+  --primary-color-text: #ffffff;
+
+  // 辅助色
+  --secondary-color: #81C784;
+  --accent-color: #FFB74D;
+
+  // 背景色
+  --surface-ground: #f8fafc;
+  --surface-card: #ffffff;
+  --surface-overlay: #ffffff;
+  --surface-border: #e2e8f0;
+
+  // 文字颜色
+  --text-color: #334155;
+  --text-color-secondary: #64748b;
+
+  // 状态色
+  --success-color: #81C784;
+  --info-color: #4FC3F7;
+  --warn-color: #FFB74D;
+  --danger-color: #EF5350;
+
+  // 阴影
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+
+  // 圆角
+  --border-radius: 12px;
+  --border-radius-sm: 8px;
+}
+
+// 深色模式
+.dark {
+  // 主色调
+  --primary-color: #4FC3F7;
+  --primary-color-text: #ffffff;
+
+  // 辅助色
+  --secondary-color: #81C784;
+  --accent-color: #FFB74D;
+
+  // 背景色
+  --surface-ground: #121212;
+  --surface-card: #1e1e1e;
+  --surface-overlay: #1e1e1e;
+  --surface-border: #333333;
+
+  // 文字颜色
+  --text-color: #e0e0e0;
+  --text-color-secondary: #9e9e9e;
+
+  // 阴影
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.5);
+}
+
+// 全局样式
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body, #app {
+  height: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background-color: var(--surface-ground);
+  color: var(--text-color);
+}
+
+// 卡片样式
+.memo-card {
+  background: var(--surface-card);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-sm);
+  padding: 16px;
+  margin-bottom: 12px;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+  cursor: pointer;
+
+  &:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+  }
+}
+
+// 标签样式
+.tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 500;
+  background-color: rgba(79, 195, 247, 0.15);
+  color: #0288D1;
+  margin-right: 6px;
+  margin-bottom: 4px;
+
+  &.tag-green {
+    background-color: rgba(129, 199, 132, 0.15);
+    color: #388E3C;
+  }
+
+  &.tag-orange {
+    background-color: rgba(255, 183, 77, 0.15);
+    color: #F57C00;
+  }
+}
+
+// 输入框样式
+.input-area {
+  background: var(--surface-card);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-md);
+  padding: 16px;
+
+  textarea {
+    width: 100%;
+    border: none;
+    outline: none;
+    resize: none;
+    font-size: 16px;
+    line-height: 1.6;
+    background: transparent;
+
+    &::placeholder {
+      color: var(--text-color-secondary);
+    }
+  }
+}
+
+// 按钮样式
+.btn-primary {
+  background: var(--primary-color);
+  border: none;
+  border-radius: var(--border-radius-sm);
+  padding: 8px 16px;
+  color: white;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+
+  &:hover {
+    background: #29B6F6;
+  }
+
+  &:disabled {
+    background: #B0BEC5;
+    cursor: not-allowed;
+  }
+}
+
+// 侧边栏样式
+.sidebar {
+  background: var(--surface-card);
+  border-right: 1px solid var(--surface-border);
+  padding: 16px;
+
+  .tag-list {
+    list-style: none;
+
+    li {
+      padding: 10px 12px;
+      border-radius: var(--border-radius-sm);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 4px;
+      transition: background-color 0.2s ease;
+
+      &:hover {
+        background-color: var(--surface-ground);
+      }
+
+      &.active {
+        background-color: rgba(79, 195, 247, 0.15);
+        color: var(--primary-color);
+      }
+
+      .count {
+        background: var(--surface-ground);
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-size: 12px;
+        color: var(--text-color-secondary);
+      }
+    }
+  }
+}
+
+// 主内容区
+.main-content {
+  flex: 1;
+  padding: 24px;
+  overflow-y: auto;
+}
+
+// 统计卡片
+.stats-card {
+  background: var(--surface-card);
+  border-radius: var(--border-radius);
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: var(--shadow-sm);
+
+  .stats-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+
+    &.blue {
+      background: rgba(79, 195, 247, 0.15);
+      color: #0288D1;
+    }
+
+    &.green {
+      background: rgba(129, 199, 132, 0.15);
+      color: #388E3C;
+    }
+
+    &.orange {
+      background: rgba(255, 183, 77, 0.15);
+      color: #F57C00;
+    }
+  }
+
+  .stats-info {
+    .stats-value {
+      font-size: 24px;
+      font-weight: 600;
+      color: var(--text-color);
+    }
+
+    .stats-label {
+      font-size: 13px;
+      color: var(--text-color-secondary);
+    }
+  }
+}
