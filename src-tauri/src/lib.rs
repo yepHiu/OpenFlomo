@@ -1,3 +1,4 @@
+use tauri::Manager;
 use tauri_plugin_sql::{Migration, MigrationKind};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -24,7 +25,19 @@ pub fn run() {
                 .add_migrations("sqlite:openflomo.db", migrations)
                 .build(),
         )
-        .setup(|_app| {
+        .setup(|app| {
+            // 获取应用数据目录并打印
+            match app.path().app_data_dir() {
+                Ok(app_data_dir) => {
+                    println!("[OpenFlomo] App data dir: {:?}", app_data_dir);
+                    // 检查数据库文件是否存在
+                    let db_path = app_data_dir.join("openflomo.db");
+                    println!("[OpenFlomo] DB path: {:?}", db_path);
+                }
+                Err(e) => {
+                    println!("[OpenFlomo] Failed to get app data dir: {:?}", e);
+                }
+            }
             println!("[OpenFlomo] App setup complete, SQL plugin loaded");
             Ok(())
         })

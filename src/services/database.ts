@@ -1,4 +1,5 @@
 import Database from "@tauri-apps/plugin-sql";
+import { appDataDir, join } from "@tauri-apps/api/path";
 
 export interface Memo {
   id: number;
@@ -14,7 +15,15 @@ async function getDb(): Promise<Database> {
   if (!db) {
     console.log("[DB] Loading database...");
     try {
-      db = await Database.load("sqlite:openflomo.db");
+      // 使用与后端相同的应用数据目录
+      const dataDir = await appDataDir();
+      const dbPath = await join(dataDir, "openflomo.db");
+      console.log("[DB] Database path:", dbPath);
+      db = await Database.load(`sqlite:${dbPath}`);
+
+      // 初始化表（如果不存在）
+      await initTable();
+
       console.log("[DB] Database loaded successfully");
     } catch (e) {
       console.error("[DB] Failed to load database:", e);
@@ -23,6 +32,26 @@ async function getDb(): Promise<Database> {
     }
   }
   return db;
+}
+
+// 初始化数据库表
+async function initTable() {
+  if (!db) return;
+
+  try {
+    await db.execute(`
+      CREATE TABLE IF NOT EXISTS memos (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        content TEXT NOT NULL,
+        tags TEXT DEFAULT '',
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      )
+    `);
+    console.log("[DB] Table initialized");
+  } catch (e) {
+    console.error("[DB] Failed to init table:", e);
+  }
 }
 
 // 获取所有 memo
