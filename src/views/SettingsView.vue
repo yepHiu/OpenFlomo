@@ -1,12 +1,84 @@
 <script setup lang="ts">
+import { ref } from "vue";
 import { useSettingsStore } from "../stores/settingsStore";
 import { useRouter } from "vue-router";
+import { exportMemos, importMemos, type ExportData } from "../services/database";
+import { save, open } from "@tauri-apps/plugin-dialog";
+import { writeTextFile } from "@tauri-apps/plugin-fs";
 
 const settingsStore = useSettingsStore();
 const router = useRouter();
+const isExporting = ref(false);
+const isImporting = ref(false);
 
 function goBack() {
   router.push("/");
+}
+
+// 导出 memo
+async function handleExport() {
+  if (isExporting.value) return;
+  isExporting.value = true;
+
+  try {
+    const data = await exportMemos();
+    const jsonStr = JSON.stringify(data, null, 2);
+
+    // 使用系统对话框选择保存位置
+    const filePath = await save({
+      defaultPath: `openflomo-export-${new Date().toISOString().split("T")[0]}.json`,
+      filters: [{ name: "JSON", extensions: ["json"] }],
+    });
+
+    if (filePath) {
+      await writeTextFile(filePath, jsonStr);
+      alert(`导出成功，共 ${data.memos.length} 条记录`);
+    }
+  } catch (e) {
+    console.error("Export failed:", e);
+    alert("导出失败: " + e);
+  } finally {
+    isExporting.value = false;
+  }
+}
+
+// 导入 memo
+async function handleImport() {
+  if (isImporting.value) return;
+  isImporting.value = true;
+
+  try {
+    // 使用系统对话框选择文件
+    const filePath = await open({
+      filters: [{ name: "JSON", extensions: ["json"] }],
+      multiple: false,
+    });
+
+    if (!filePath) {
+      isImporting.value = false;
+      return;
+    }
+
+    // 读取文件内容
+    const { readTextFile } = await import("@tauri-apps/plugin-fs");
+    const text = await readTextFile(filePath as string);
+    const data: ExportData = JSON.parse(text);
+
+    if (!data.version || !data.memos) {
+      throw new Error("无效的文件格式");
+    }
+
+    const count = await importMemos(data);
+    alert(`导入成功，共 ${count} 条记录`);
+
+    // 刷新页面以更新数据
+    window.location.reload();
+  } catch (e) {
+    console.error("Import failed:", e);
+    alert("导入失败: " + e);
+  } finally {
+    isImporting.value = false;
+  }
 }
 </script>
 
@@ -42,10 +114,17 @@ function goBack() {
         <h2>关于</h2>
         <div class="setting-item">
           <div class="setting-info">
-            <i class="pi pi-info-circle"></i>
-            <span>版本</span>
+            <i class="pi pi-user"></i>
+            <span>作者</span>
           </div>
-          <span class="version">v1.0.0</span>
+          <span class="version">奶茶不加冰</span>
+        </div>
+        <div class="setting-item">
+          <div class="setting-info">
+            <i class="pi pi-code"></i>
+            <span>Powered by</span>
+          </div>
+          <span class="version">MiniMax-M2.5 + Claude Code</span>
         </div>
         <div class="setting-item">
           <div class="setting-info">
@@ -54,6 +133,28 @@ function goBack() {
           </div>
           <span class="desc">开源笔记应用</span>
         </div>
+        <div class="setting-item">
+          <div class="setting-info">
+            <i class="pi pi-info-circle"></i>
+            <span>版本</span>
+          </div>
+          <span class="version">v1.0.1</span>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <h2>数据管理</h2>
+        <div class="data-actions">
+          <button class="btn-export" @click="handleExport" :disabled="isExporting">
+            <i class="pi pi-download"></i>
+            <span>{{ isExporting ? "导出中..." : "导出数据" }}</span>
+          </button>
+          <button class="btn-import" @click="handleImport" :disabled="isImporting">
+            <i class="pi pi-upload"></i>
+            <span>{{ isImporting ? "导入中..." : "导入数据" }}</span>
+          </button>
+        </div>
+        <p class="data-hint">导出将保存为 JSON 文件，导入支持 JSON 格式</p>
       </div>
     </div>
   </div>
@@ -200,5 +301,69 @@ function goBack() {
   input:checked + .slider:before {
     transform: translateX(22px);
   }
+}
+
+// 数据管理按钮
+.data-actions {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.btn-export,
+.btn-import {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  border: none;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  i {
+    font-size: 16px;
+  }
+}
+
+.btn-export {
+  background: linear-gradient(135deg, #4FC3F7 0%, #29b6f6 100%);
+  color: white;
+
+  &:hover:not(:disabled) {
+    background: linear-gradient(135deg, #29b6f6 0%, #0288d1 100%);
+    transform: translateY(-1px);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.btn-import {
+  background: linear-gradient(135deg, #81C784 0%, #66bb6a 100%);
+  color: white;
+
+  &:hover:not(:disabled) {
+    background: linear-gradient(135deg, #66bb6a 0%, #4caf50 100%);
+    transform: translateY(-1px);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.data-hint {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-color-secondary);
+  text-align: center;
 }
 </style>

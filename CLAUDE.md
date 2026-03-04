@@ -23,8 +23,11 @@ npm install
 # Run development server
 npm run tauri dev
 
-# Build for production
+# Build for production (includes TypeScript check)
 npm run tauri build
+
+# Type check only
+npm run build
 ```
 
 ## Architecture
@@ -32,6 +35,14 @@ npm run tauri build
 - **Web-first approach**: Desktop app using WebView2
 - **Data strategy**: Local SQLite database, stored in app data directory
 - **Bright color scheme**: Light blue (#4FC3F7), Light green (#81C784), Light orange (#FFB74D)
+
+### Data Layer
+
+- Database service (`src/services/database.ts`) uses singleton pattern with lazy loading
+- Uses `@tauri-apps/plugin-sql` to connect to SQLite
+- Database file: `openflomo.db` in app data directory
+- Memo schema: `id`, `content`, `tags` (comma-separated), `created_at`, `updated_at`
+- All database operations are async and return typed `Memo` objects
 
 ## Implemented Features (MVP)
 
@@ -75,3 +86,10 @@ src-tauri/
 - New users should complete "record + tag + find" without tutorial
 - Keep UI/UX lightweight - this is a "light" product
 - Data must be exportable/backupable
+- Tag syntax: Use `#tag` in content (e.g., `#工作 #想法`)
+
+## Tauri Configuration
+
+- Database migrations defined in `src-tauri/src/lib.rs`
+- Window configuration in `src-tauri/tauri.conf.json`
+- App uses WebView2 on Windows

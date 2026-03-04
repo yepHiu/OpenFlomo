@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, nextTick } from "vue";
 import { useMemoStore } from "../../stores/memoStore";
+import { parseMarkdown } from "../../utils/markdown";
 import type { Memo } from "../../services/database";
 
 const props = defineProps<{
@@ -13,6 +14,9 @@ const editContent = ref("");
 const editTags = ref("");
 const showConfirmDelete = ref(false);
 const contentInputRef = ref<HTMLTextAreaElement | null>(null);
+
+// 渲染内容
+const renderedNodes = computed(() => parseMarkdown(props.memo.content));
 
 const tagsList = computed(() => {
   const memoTags = props.memo.tags || "";
@@ -63,7 +67,7 @@ async function saveEdit() {
   if (!editContent.value.trim()) return;
 
   // 提取标签
-  const tagRegex = /#[\p{L}\d\/]+/gu;
+  const tagRegex = /#[\p{L}\d\/]+(?=\s|$|[，,。.])/gu;
   const matches = editContent.value.match(tagRegex) || [];
   editContent.value = editContent.value.replace(tagRegex, "").trim();
   const uniqueTags = [...new Set(matches.map((t) => t.slice(1)))];
@@ -114,7 +118,9 @@ async function handleDelete() {
       </div>
 
       <div class="card-content">
-        {{ memo.content }}
+        <template v-for="(node, index) in renderedNodes" :key="index">
+          <component :is="node" />
+        </template>
       </div>
 
       <div v-if="tagsList.length > 0" class="card-tags" @dblclick.stop>
@@ -302,6 +308,24 @@ async function handleDelete() {
   white-space: pre-wrap;
   word-break: break-word;
   cursor: text;
+
+  :deep(.md-p) {
+    margin: 0;
+  }
+
+  :deep(.md-ul),
+  :deep(.md-ol) {
+    margin: 0;
+    padding-left: 1.5em;
+  }
+
+  :deep(.md-li) {
+    margin: 0;
+  }
+
+  :deep(strong) {
+    font-weight: 600;
+  }
 }
 
 .card-edit {

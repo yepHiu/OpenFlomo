@@ -66,7 +66,7 @@ export const useMemoStore = defineStore("memo", () => {
     isBatchMode.value = false;
   }
 
-  // 提取所有标签
+  // 提取所有标签（按使用频率降序排列）
   const allTags = computed(() => {
     const tagMap = new Map<string, number>();
     memos.value.forEach((memo) => {
@@ -77,10 +77,12 @@ export const useMemoStore = defineStore("memo", () => {
         });
       }
     });
-    return Array.from(tagMap.entries()).map(([name, count]) => ({
-      name,
-      count,
-    }));
+    return Array.from(tagMap.entries())
+      .map(([name, count]) => ({
+        name,
+        count,
+      }))
+      .sort((a, b) => b.count - a.count);
   });
 
   // 过滤后的 memos

@@ -1,44 +1,140 @@
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { ref, computed, nextTick } from "vue";
 import { useMemoStore } from "../../stores/memoStore";
 
 const memoStore = useMemoStore();
 const rawInput = ref("");
 const isSubmitting = ref(false);
+const textareaRef = ref<HTMLTextAreaElement | null>(null);
 
-// 从输入中提取标签 - 支持中文、英文、数字和斜杠
+// 列表模式状态
+const isListMode = ref(false);
+
+// 自动调整高度
+function autoResize() {
+  const textarea = textareaRef.value;
+  if (!textarea) return;
+
+  textarea.style.height = "auto";
+  textarea.style.height = textarea.scrollHeight + "px";
+}
+
+// 检测无序列表模式
+function detectListMode(value: string) {
+  const lastLine = value.split("\n").pop() || "";
+
+  // 检测空无序列表标记
+  if (/^[-*]\s*$/.test(lastLine)) {
+    isListMode.value = true;
+    return;
+  }
+
+  // 检测无序列表开头
+  if (/^[-*]\s/.test(lastLine)) {
+    isListMode.value = true;
+    return;
+  }
+
+  // 非列表
+  isListMode.value = false;
+}
+
+// 提取内容
 const extractedContent = computed(() => {
-  const tagRegex = /#[\p{L}\d\/]+/gu;
+  const tagRegex = /#[\p{L}\d\/]+(?=\s|$|[，,。.])/gu;
   return rawInput.value.replace(tagRegex, "").trim();
 });
 
 const extractedTags = computed(() => {
-  const tagRegex = /#[\p{L}\d\/]+/gu;
+  const tagRegex = /#[\p{L}\d\/]+(?=\s|$|[，,。.])/gu;
   const matches = rawInput.value.match(tagRegex) || [];
   const uniqueTags = [...new Set(matches.map((t) => t.slice(1)))];
   return uniqueTags.join(",");
 });
 
-async function handleSubmit() {
-  if (!extractedContent.value || isSubmitting.value) return;
+// 处理键盘 - 智能列表
+function handleKeydown(event: KeyboardEvent) {
+  const textarea = textareaRef.value;
+  if (!textarea) return;
 
-  isSubmitting.value = true;
-  try {
-    console.log("Submitting memo:", extractedContent.value, extractedTags.value);
-    await memoStore.addMemo(extractedContent.value, extractedTags.value);
-    rawInput.value = "";
-    console.log("Memo submitted successfully");
-  } catch (e) {
-    console.error("Failed to submit memo:", e);
-    alert("提交失败: " + e);
-  } finally {
-    isSubmitting.value = false;
+  // Ctrl/Cmd + Enter 发送
+  if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
+    event.preventDefault();
+    handleSubmit();
+    return;
+  }
+
+  // Enter 换行 + 智能列表续接
+  if (event.key === "Enter" && !event.shiftKey) {
+    event.preventDefault();
+
+    const { selectionStart, selectionEnd, value } = textarea;
+    const beforeCursor = value.slice(0, selectionStart);
+    const afterCursor = value.slice(selectionEnd);
+
+    // 获取当前行
+    const beforeLines = beforeCursor.split("\n");
+    const currentLine = beforeLines[beforeLines.length - 1] || "";
+    const currentLineTrimmed = currentLine.trim();
+
+    // 检查是否在空列表项上按 Enter（不续接）
+    const isEmptyList = currentLineTrimmed === "-" || currentLineTrimmed === "*";
+
+    if (isListMode.value && !isEmptyList) {
+      // 续接无序列表
+      const continuation = "- ";
+
+      // 构建新值
+      const beforePart = beforeLines.slice(0, -1).join("\n");
+      const newValue = beforePart
+        ? beforePart + "\n" + currentLine + "\n" + continuation + afterCursor
+        : currentLine + "\n" + continuation + afterCursor;
+
+      rawInput.value = newValue;
+
+      const newPos = selectionStart + 1 + continuation.length;
+      nextTick(() => {
+        textarea.setSelectionRange(newPos, newPos);
+        autoResize();
+      });
+    } else {
+      // 普通换行
+      const newValue = value.slice(0, selectionStart) + "\n" + value.slice(selectionEnd);
+      rawInput.value = newValue;
+
+      const newPos = selectionStart + 1;
+      nextTick(() => {
+        textarea.setSelectionRange(newPos, newPos);
+        autoResize();
+      });
+
+      // 检测新行是否需要进入列表模式
+      detectListMode(rawInput.value);
+    }
   }
 }
 
-function handleKeydown(event: KeyboardEvent) {
-  if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
-    handleSubmit();
+// 处理输入
+function handleInput() {
+  autoResize();
+  detectListMode(rawInput.value);
+}
+
+async function handleSubmit() {
+  if (!extractedContent.value || isSubmitting.value) return;
+
+  // 重置列表模式
+  isListMode.value = false;
+
+  isSubmitting.value = true;
+  try {
+    await memoStore.addMemo(extractedContent.value, extractedTags.value);
+    rawInput.value = "";
+  } catch (e) {
+    console.error("Failed to submit:", e);
+    alert("提交失败: " + e);
+  } finally {
+    isSubmitting.value = false;
   }
 }
 </script>
@@ -46,10 +142,11 @@ function handleKeydown(event: KeyboardEvent) {
 <template>
   <div class="memo-input">
     <textarea
+      ref="textareaRef"
       v-model="rawInput"
-      placeholder="记录今天的学习、思考或灵感... (支持 #标签)"
-      rows="3"
+      placeholder="记录今天的学习、思考或灵感... (支持 #标签、- 列表、**加粗**)"
       @keydown="handleKeydown"
+      @input="handleInput"
     ></textarea>
 
     <div class="input-footer">
@@ -92,8 +189,17 @@ function handleKeydown(event: KeyboardEvent) {
     font-size: 16px;
     line-height: 1.6;
     background: transparent;
-    min-height: 80px;
     font-family: inherit;
+    overflow-y: auto;
+    min-height: 24px;
+    max-height: 300px;
+
+    // 隐藏滚动条
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    &::-webkit-scrollbar {
+      display: none;
+    }
 
     &::placeholder {
       color: var(--text-color-secondary);

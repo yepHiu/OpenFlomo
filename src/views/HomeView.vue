@@ -25,38 +25,40 @@ function clearSearch() {
 
     <!-- 主内容区 -->
     <div class="main-content">
-      <!-- 顶部搜索和统计 -->
-      <div class="top-bar">
-        <div class="search-box">
-          <i class="pi pi-search"></i>
-          <input
-            v-model="searchQuery"
-            type="text"
-            placeholder="搜索记录..."
-            @input="handleSearch"
-            @keyup.escape="clearSearch"
-          />
-          <i
-            v-if="searchQuery"
-            class="pi pi-times clear-btn"
-            @click="clearSearch"
-          ></i>
+      <!-- 顶部固定区域 -->
+      <div class="content-fixed">
+        <!-- 顶部搜索和统计 -->
+        <div class="top-bar">
+          <div class="search-box">
+            <i class="pi pi-search"></i>
+            <input
+              v-model="searchQuery"
+              type="text"
+              placeholder="搜索记录..."
+              @input="handleSearch"
+              @keyup.escape="clearSearch"
+            />
+            <i
+              v-if="searchQuery"
+              class="pi pi-times clear-btn"
+              @click="clearSearch"
+            ></i>
+          </div>
         </div>
 
+        <!-- 当前位置标签 -->
+        <div v-if="memoStore.selectedTag" class="current-filter">
+          <span class="filter-label">当前筛选：</span>
+          <span class="tag">#{{ memoStore.selectedTag }}</span>
+          <i class="pi pi-times" @click="memoStore.setSelectedTag(null)"></i>
+        </div>
+
+        <!-- 记录输入框 -->
+        <MemoInput />
       </div>
 
-      <!-- 当前位置标签 -->
-      <div v-if="memoStore.selectedTag" class="current-filter">
-        <span class="filter-label">当前筛选：</span>
-        <span class="tag">#{{ memoStore.selectedTag }}</span>
-        <i class="pi pi-times" @click="memoStore.setSelectedTag(null)"></i>
-      </div>
-
-      <!-- 记录输入框 -->
-      <MemoInput />
-
-      <!-- 记录列表 -->
-      <MemoList />
+      <!-- 记录列表（可滚动） -->
+      <MemoList class="content-scrollable" />
     </div>
   </div>
 </template>
@@ -85,12 +87,28 @@ function clearSearch() {
 
 .main-content {
   flex: 1;
-  padding: 24px;
-  overflow-y: auto;
-  overflow-x: hidden;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  padding: 24px;
+  // 最大宽度限制，超大屏幕时左右留白
+  max-width: 900px;
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.content-fixed {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.content-scrollable {
+  flex: 1;
+  overflow-y: auto;
+  margin-top: 16px;
 
   // 隐藏滚动条
   scrollbar-width: none;

@@ -161,3 +161,50 @@ export async function getHeatmapData(): Promise<HeatmapItem[]> {
   );
   return result;
 }
+
+// 导出数据格式
+export interface ExportData {
+  version: string;
+  exportedAt: string;
+  memos: {
+    content: string;
+    tags: string;
+    created_at: string;
+  }[];
+}
+
+// 导出所有 memo
+export async function exportMemos(): Promise<ExportData> {
+  const memos = await getAllMemos();
+  return {
+    version: "1.0",
+    exportedAt: new Date().toISOString(),
+    memos: memos.map((m) => ({
+      content: m.content,
+      tags: m.tags,
+      created_at: m.created_at,
+    })),
+  };
+}
+
+// 导入 memo
+export async function importMemos(data: ExportData): Promise<number> {
+  const database = await getDb();
+
+  if (!data.memos || !Array.isArray(data.memos)) {
+    throw new Error("无效的导入数据格式");
+  }
+
+  let importedCount = 0;
+
+  for (const memo of data.memos) {
+    const now = new Date().toISOString();
+    await database.execute(
+      "INSERT INTO memos (content, tags, created_at, updated_at) VALUES (?, ?, ?, ?)",
+      [memo.content, memo.tags || "", memo.created_at || now, now]
+    );
+    importedCount++;
+  }
+
+  return importedCount;
+}

@@ -68,9 +68,9 @@ function formatDate(dateStr: string): string {
 <style scoped lang="scss">
 .heatmap-container {
   padding: 12px;
-  background: var(--surface-card);
-  border-radius: var(--border-radius);
   margin: 0 12px 16px;
+  background: var(--surface-ground);
+  border-radius: var(--border-radius);
 }
 
 .heatmap-header {

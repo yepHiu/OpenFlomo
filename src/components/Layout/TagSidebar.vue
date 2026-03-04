@@ -14,6 +14,13 @@ function selectTag(tag: string) {
   }
 }
 
+function handleTagKeydown(event: KeyboardEvent, tag: string) {
+  if (event.key === "Enter" || event.key === " ") {
+    event.preventDefault();
+    selectTag(tag);
+  }
+}
+
 function goToSettings() {
   router.push("/settings");
 }
@@ -23,7 +30,18 @@ function goToSettings() {
   <div class="tag-sidebar">
     <div class="sidebar-header">
       <h2>OpenFlomo</h2>
-      <p>记录 · 回顾 · 连接</p>
+      <div class="header-actions">
+        <div
+          class="icon-btn"
+          @click="goToSettings"
+          tabindex="0"
+          @keydown="(e) => e.key === 'Enter' && goToSettings()"
+          role="button"
+          aria-label="设置"
+        >
+          <i class="pi pi-cog"></i>
+        </div>
+      </div>
     </div>
 
     <div class="sidebar-section">
@@ -31,6 +49,8 @@ function goToSettings() {
         class="menu-item"
         :class="{ active: !memoStore.selectedTag }"
         @click="memoStore.setSelectedTag(null)"
+        tabindex="0"
+        @keydown="(e) => e.key === 'Enter' && memoStore.setSelectedTag(null)"
       >
         <i class="pi pi-home"></i>
         <span>全部记录</span>
@@ -38,30 +58,36 @@ function goToSettings() {
       </div>
     </div>
 
-    <!-- 热力图 -->
-    <Heatmap />
-
     <!-- 统计 -->
     <div class="sidebar-stats">
       <div class="stat-item">
         <span class="stat-value">{{ memoStore.memos.length }}</span>
         <span class="stat-label">总记录</span>
       </div>
-      <div class="stat-divider"></div>
       <div class="stat-item">
         <span class="stat-value">{{ memoStore.todayCount }}</span>
         <span class="stat-label">今日</span>
       </div>
     </div>
 
-    <div class="sidebar-section">
+    <!-- 热力图 -->
+    <Heatmap />
+
+    <div class="tag-header">
       <h3>标签</h3>
+    </div>
+
+    <div class="tag-section">
       <ul class="tag-list" v-if="memoStore.allTags.length > 0">
         <li
           v-for="tag in memoStore.allTags"
           :key="tag.name"
           :class="{ active: memoStore.selectedTag === tag.name }"
           @click="selectTag(tag.name)"
+          @keydown="(e) => handleTagKeydown(e, tag.name)"
+          tabindex="0"
+          role="button"
+          :aria-pressed="memoStore.selectedTag === tag.name"
         >
           <span class="tag-name">
             <i class="pi pi-hashtag"></i>
@@ -71,16 +97,6 @@ function goToSettings() {
         </li>
       </ul>
       <p v-else class="empty-tags">暂无标签</p>
-    </div>
-
-    <div class="sidebar-footer">
-      <div class="footer-menu">
-        <div class="menu-item" @click="goToSettings">
-          <i class="pi pi-cog"></i>
-          <span>设置</span>
-        </div>
-      </div>
-      <p>先记录，后整理</p>
     </div>
   </div>
 </template>
@@ -94,20 +110,14 @@ function goToSettings() {
   display: flex;
   flex-direction: column;
   padding: 20px 0;
-  overflow-y: auto;
-  overflow-x: hidden;
-
-  // 隐藏滚动条
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-  &::-webkit-scrollbar {
-    display: none;
-  }
+  overflow: hidden;
 }
 
 .sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   padding: 0 20px 20px;
-  border-bottom: 1px solid var(--surface-border);
   margin-bottom: 16px;
 
   h2 {
@@ -122,10 +132,35 @@ function goToSettings() {
     background-clip: text;
   }
 
-  p {
-    margin: 4px 0 0;
-    font-size: 12px;
+  .header-actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  .icon-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    cursor: pointer;
     color: var(--text-color-secondary);
+    transition: all 0.2s ease;
+    outline: none;
+
+    &:hover {
+      background: var(--surface-ground);
+      color: var(--text-color);
+    }
+
+    &:focus-visible {
+      box-shadow: 0 0 0 2px var(--primary-color);
+    }
+
+    i {
+      font-size: 16px;
+    }
   }
 }
 
@@ -141,9 +176,40 @@ function goToSettings() {
     color: var(--text-color-secondary);
     margin: 0 0 10px 8px;
   }
+
 }
 
-.menu-item {
+.tag-header {
+  padding: 0 12px;
+  margin-bottom: 10px;
+
+  h3 {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-color-secondary);
+    margin: 0 0 10px 8px;
+  }
+}
+
+.tag-section {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+  padding: 0 12px;
+  box-sizing: border-box;
+
+  // 隐藏滚动条
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+// 共用列表项样式
+.sidebar-item {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -151,22 +217,19 @@ function goToSettings() {
   border-radius: var(--border-radius-sm);
   cursor: pointer;
   transition: background-color 0.2s ease;
+  outline: none;
 
   &:hover {
     background: var(--surface-ground);
   }
 
+  &:focus-visible {
+    box-shadow: 0 0 0 2px var(--primary-color);
+  }
+
   &.active {
     background: rgba(79, 195, 247, 0.15);
     color: var(--primary-color);
-  }
-
-  i {
-    font-size: 16px;
-  }
-
-  span {
-    font-size: 14px;
   }
 
   .count {
@@ -179,28 +242,26 @@ function goToSettings() {
   }
 }
 
+.menu-item {
+  @extend .sidebar-item;
+
+  i {
+    font-size: 16px;
+  }
+
+  span {
+    font-size: 14px;
+  }
+}
+
 .tag-list {
   list-style: none;
   padding: 0;
   margin: 0;
 
   li {
-    display: flex;
-    align-items: center;
+    @extend .sidebar-item;
     justify-content: space-between;
-    padding: 10px 12px;
-    border-radius: var(--border-radius-sm);
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-
-    &:hover {
-      background: var(--surface-ground);
-    }
-
-    &.active {
-      background: rgba(79, 195, 247, 0.15);
-      color: var(--primary-color);
-    }
 
     .tag-name {
       display: flex;
@@ -212,14 +273,6 @@ function goToSettings() {
         font-size: 12px;
         opacity: 0.6;
       }
-    }
-
-    .count {
-      font-size: 12px;
-      color: var(--text-color-secondary);
-      background: var(--surface-ground);
-      padding: 2px 8px;
-      border-radius: 10px;
     }
   }
 }
@@ -257,57 +310,6 @@ function goToSettings() {
       color: var(--text-color-secondary);
       margin-top: 2px;
     }
-  }
-
-  .stat-divider {
-    width: 1px;
-    height: 30px;
-    background: var(--surface-border);
-    margin: 0 12px;
-  }
-}
-
-.sidebar-footer {
-  margin-top: auto;
-  padding: 20px;
-  border-top: 1px solid var(--surface-border);
-
-  .footer-menu {
-    display: flex;
-    justify-content: center;
-    margin-bottom: 12px;
-  }
-
-  .menu-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 16px;
-    border-radius: var(--border-radius-sm);
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-    color: var(--text-color-secondary);
-
-    &:hover {
-      background: var(--surface-ground);
-      color: var(--text-color);
-    }
-
-    i {
-      font-size: 14px;
-    }
-
-    span {
-      font-size: 13px;
-    }
-  }
-
-  p {
-    margin: 0;
-    font-size: 12px;
-    color: var(--text-color-secondary);
-    font-style: italic;
-    text-align: center;
   }
 }
 </style>
