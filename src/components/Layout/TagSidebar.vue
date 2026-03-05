@@ -7,6 +7,7 @@ const memoStore = useMemoStore();
 const router = useRouter();
 
 function selectTag(tag: string) {
+  if (memoStore.isTrashMode) return;
   if (memoStore.selectedTag === tag) {
     memoStore.setSelectedTag(null);
   } else {
@@ -24,6 +25,17 @@ function handleTagKeydown(event: KeyboardEvent, tag: string) {
 function goToSettings() {
   router.push("/settings");
 }
+
+function goToTrash() {
+  memoStore.setSelectedTag(null); // 清除标签选中状态
+  memoStore.setSearch(""); // 清除搜索
+  memoStore.toggleTrashMode();
+}
+
+// 刷新数据
+function refreshData() {
+  memoStore.fetchMemos();
+}
 </script>
 
 <template>
@@ -31,6 +43,17 @@ function goToSettings() {
     <div class="sidebar-header">
       <h2>OpenFlomo</h2>
       <div class="header-actions">
+        <div
+          class="icon-btn"
+          @click="refreshData"
+          tabindex="0"
+          @keydown="(e) => e.key === 'Enter' && refreshData()"
+          role="button"
+          aria-label="刷新"
+          title="刷新数据"
+        >
+          <i class="pi pi-refresh"></i>
+        </div>
         <div
           class="icon-btn"
           @click="goToSettings"
@@ -47,26 +70,41 @@ function goToSettings() {
     <div class="sidebar-section">
       <div
         class="menu-item"
-        :class="{ active: !memoStore.selectedTag }"
-        @click="memoStore.setSelectedTag(null)"
+        :class="{ active: !memoStore.selectedTag && !memoStore.isTrashMode }"
+        @click="memoStore.setSelectedTag(null); memoStore.isTrashMode && memoStore.toggleTrashMode()"
         tabindex="0"
-        @keydown="(e) => e.key === 'Enter' && memoStore.setSelectedTag(null)"
+        @keydown="(e) => e.key === 'Enter' && (memoStore.setSelectedTag(null), memoStore.isTrashMode && memoStore.toggleTrashMode())"
       >
         <i class="pi pi-home"></i>
         <span>全部记录</span>
-        <span class="count">{{ memoStore.memos.length }}</span>
+        <span class="count">{{ memoStore.totalCount }}</span>
       </div>
     </div>
 
     <!-- 统计 -->
     <div class="sidebar-stats">
       <div class="stat-item">
-        <span class="stat-value">{{ memoStore.memos.length }}</span>
+        <span class="stat-value">{{ memoStore.totalCountWithTrash }}</span>
         <span class="stat-label">总记录</span>
       </div>
       <div class="stat-item">
         <span class="stat-value">{{ memoStore.todayCount }}</span>
         <span class="stat-label">今日</span>
+      </div>
+    </div>
+
+    <!-- 回收站入口 -->
+    <div class="sidebar-section">
+      <div
+        class="menu-item trash-item"
+        :class="{ active: memoStore.isTrashMode }"
+        @click="goToTrash"
+        tabindex="0"
+        @keydown="(e) => e.key === 'Enter' && goToTrash()"
+      >
+        <i class="pi pi-trash"></i>
+        <span>回收站</span>
+        <span v-if="memoStore.trashCount > 0" class="count badge">{{ memoStore.trashCount }}</span>
       </div>
     </div>
 
@@ -251,6 +289,26 @@ function goToSettings() {
 
   span {
     font-size: 14px;
+  }
+
+  &.trash-item {
+    color: var(--text-color-secondary);
+
+    &.active {
+      color: #ff9800;
+    }
+
+    &:hover {
+      color: #ff9800;
+    }
+  }
+
+  .badge {
+    background: #9e9e9e;
+    color: white;
+    font-size: 11px;
+    padding: 2px 6px;
+    border-radius: 10px;
   }
 }
 

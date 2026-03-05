@@ -6,6 +6,7 @@ import type { Memo } from "../../services/database";
 
 const props = defineProps<{
   memo: Memo;
+  isTrashMode?: boolean;
 }>();
 
 const memoStore = useMemoStore();
@@ -32,6 +33,28 @@ const formattedDate = computed(() => {
   const hours = String(date.getHours()).padStart(2, "0");
   const minutes = String(date.getMinutes()).padStart(2, "0");
   return `${year}-${month}-${day} ${hours}:${minutes}`;
+});
+
+// 回收站中的删除时间
+const deletedDate = computed(() => {
+  if (!props.memo.deleted_at) return "";
+  const date = new Date(props.memo.deleted_at);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  return `${year}-${month}-${day} ${hours}:${minutes}`;
+});
+
+// 剩余天数
+const remainingDays = computed(() => {
+  if (!props.memo.deleted_at) return 0;
+  const deletedDate = new Date(props.memo.deleted_at);
+  const now = new Date();
+  const diffTime = now.getTime() - deletedDate.getTime();
+  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+  return Math.max(0, 30 - diffDays);
 });
 
 // 开始编辑
@@ -89,13 +112,24 @@ async function handleDelete() {
   await memoStore.removeMemo(props.memo.id);
   showConfirmDelete.value = false;
 }
+
+// 恢复 memo
+async function handleRestore() {
+  await memoStore.restoreMemoFromTrash(props.memo.id);
+}
+
+// 彻底删除 memo
+async function handlePermanentDelete() {
+  if (!confirm("确定要彻底删除这条记录吗？此操作不可恢复！")) return;
+  await memoStore.permanentDelete(props.memo.id);
+}
 </script>
 
 <template>
   <div
     class="memo-card"
-    :class="{ editing: isEditing, selected: memoStore.selectedIds.has(memo.id), 'batch-mode': memoStore.isBatchMode }"
-    @dblclick="!memoStore.isBatchMode && startEdit()"
+    :class="{ editing: isEditing, selected: memoStore.selectedIds.has(memo.id), 'batch-mode': memoStore.isBatchMode, 'trash-mode': props.isTrashMode }"
+    @dblclick="!memoStore.isBatchMode && !props.isTrashMode && startEdit()"
   >
     <!-- 批量选择复选框 -->
     <div v-if="memoStore.isBatchMode" class="batch-checkbox" @click.stop="memoStore.toggleSelection(memo.id)" @dblclick.stop>
@@ -106,19 +140,38 @@ async function handleDelete() {
     <!-- 查看模式 -->
     <template v-if="!isEditing">
       <div class="card-header">
-        <span class="date">{{ formattedDate }}</span>
+        <div class="date-info">
+          <span class="date">{{ formattedDate }}</span>
+          <!-- 回收站模式显示删除时间和剩余天数 -->
+          <span v-if="props.isTrashMode" class="deleted-info">
+            <i class="pi pi-clock"></i>
+            删除于 {{ deletedDate }} · 剩余 {{ remainingDays }} 天
+          </span>
+        </div>
         <div v-if="!memoStore.isBatchMode" class="actions" @dblclick.stop>
-          <button class="action-btn" title="编辑" @click.stop="startEdit">
-            <i class="pi pi-pencil"></i>
-          </button>
-          <button class="action-btn delete" title="删除" @click.stop="confirmDelete">
-            <i class="pi pi-trash"></i>
-          </button>
+          <!-- 回收站模式下的操作 -->
+          <template v-if="props.isTrashMode">
+            <button class="action-btn restore" title="恢复" @click.stop="handleRestore">
+              <i class="pi pi-replay"></i>
+            </button>
+            <button class="action-btn delete" title="彻底删除" @click.stop="handlePermanentDelete">
+              <i class="pi pi-times-circle"></i>
+            </button>
+          </template>
+          <!-- 普通模式下的操作 -->
+          <template v-else>
+            <button class="action-btn" title="编辑" @click.stop="startEdit">
+              <i class="pi pi-pencil"></i>
+            </button>
+            <button class="action-btn delete" title="删除" @click.stop="confirmDelete">
+              <i class="pi pi-trash"></i>
+            </button>
+          </template>
         </div>
       </div>
 
       <div class="card-content">
-        <template v-for="(node, index) in renderedNodes" :key="index">
+        <template v-for="node in renderedNodes" :key="node.key">
           <component :is="node" />
         </template>
       </div>
@@ -168,10 +221,10 @@ async function handleDelete() {
       <div v-if="showConfirmDelete" class="confirm-overlay" @click="showConfirmDelete = false">
         <div class="confirm-dialog" @click.stop>
           <h3>确认删除</h3>
-          <p>确定要删除这条记录吗？此操作无法撤销。</p>
+          <p>确定要将这条记录移入回收站吗？</p>
           <div class="confirm-actions">
             <button class="btn-cancel" @click="showConfirmDelete = false">取消</button>
-            <button class="btn-delete" @click="handleDelete">删除</button>
+            <button class="btn-delete" @click="handleDelete">删除到回收站</button>
           </div>
         </div>
       </div>
@@ -205,6 +258,19 @@ async function handleDelete() {
     }
   }
 
+  // 回收站模式下总是显示操作按钮
+  &.trash-mode {
+    background: #fff8e1;
+    border-color: #ffe0b2;
+
+    &:hover {
+      border-color: #ff9800;
+      .actions {
+        opacity: 1;
+      }
+    }
+  }
+
   &.editing {
     border-color: var(--primary-color);
     box-shadow: var(--shadow-md);
@@ -214,6 +280,12 @@ async function handleDelete() {
   &.selected {
     border-color: var(--primary-color);
     background: rgba(79, 195, 247, 0.05);
+
+    // 回收站模式下选中背景为黄色
+    &.trash-mode {
+      border-color: #ff9800;
+      background: rgba(255, 152, 0, 0.15);
+    }
   }
 }
 
@@ -255,12 +327,30 @@ async function handleDelete() {
 .card-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   margin-bottom: 10px;
+
+  .date-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
 
   .date {
     font-size: 12px;
     color: var(--text-color-secondary);
+  }
+
+  .deleted-info {
+    font-size: 11px;
+    color: #ff9800;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+
+    i {
+      font-size: 10px;
+    }
   }
 
   .actions {
@@ -287,6 +377,13 @@ async function handleDelete() {
     &.delete:hover {
       background: rgba(239, 83, 80, 0.1);
       color: #ef5350;
+    }
+
+    &.restore {
+      &:hover {
+        background: rgba(129, 199, 132, 0.1);
+        color: #4caf50;
+      }
     }
 
     &.save:hover {
@@ -324,7 +421,7 @@ async function handleDelete() {
   }
 
   :deep(strong) {
-    font-weight: 600;
+    font-weight: 700;
   }
 }
 

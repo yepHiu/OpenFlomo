@@ -1,25 +1,45 @@
 import { defineStore } from "pinia";
 import { ref, computed } from "vue";
 import {
-  getAllMemos,
+  getMemosByPage,
+  getMemoCount,
   createMemo,
   updateMemo,
-  deleteMemo,
+  softDeleteMemo,
+  permanentDeleteMemo,
+  restoreMemo,
+  getTrashMemos,
+  getTrashCount,
+  cleanExpiredTrash,
   getTodayCount,
   getHeatmapData,
+  exportMemos,
   type Memo,
   type HeatmapItem,
+  type ExportOptions,
 } from "../services/database";
+import { save } from "@tauri-apps/plugin-dialog";
+import { writeTextFile } from "@tauri-apps/plugin-fs";
+
+const PAGE_SIZE = 20;
 
 export const useMemoStore = defineStore("memo", () => {
   const memos = ref<Memo[]>([]);
   const loading = ref(false);
+  const loadingMore = ref(false);
+  const hasMore = ref(true);
+  const totalCount = ref(0);
   const searchQuery = ref("");
   const selectedTag = ref<string | null>(null);
   const todayCount = ref(0);
   const heatmapData = ref<HeatmapItem[]>([]);
   const selectedIds = ref<Set<number>>(new Set());
   const isBatchMode = ref(false);
+
+  // 回收站相关状态
+  const trashMemos = ref<Memo[]>([]);
+  const isTrashMode = ref(false);
+  const trashCount = ref(0);
 
   // 切换批量选择模式
   function toggleBatchMode() {
@@ -50,21 +70,59 @@ export const useMemoStore = defineStore("memo", () => {
     selectedIds.value.clear();
   }
 
-  // 批量删除
+  // 批量删除（软删除到回收站）
   async function batchDeleteMemo() {
     if (selectedIds.value.size === 0) return;
 
-    const idsToDelete = Array.from(selectedIds.value);
-    for (const id of idsToDelete) {
-      await deleteMemo(id);
+    const count = selectedIds.value.size;
+    if (!confirm(`确定要将选中的 ${count} 条记录移入回收站吗？`)) {
+      return;
     }
 
-    // 更新本地状态
+    const idsToDelete = Array.from(selectedIds.value);
+    for (const id of idsToDelete) {
+      await softDeleteMemo(id);
+    }
+
+    // 从当前列表中移除
     memos.value = memos.value.filter((m) => !selectedIds.value.has(m.id));
     todayCount.value = Math.max(0, todayCount.value - idsToDelete.length);
+    // 更新回收站数量
+    trashCount.value += idsToDelete.length;
     clearSelection();
     isBatchMode.value = false;
   }
+
+  // 批量导出选中内容
+  async function batchExportMemo(format: "markdown" | "json" = "markdown") {
+    if (selectedIds.value.size === 0) return;
+
+    const ids = Array.from(selectedIds.value);
+
+    const options: ExportOptions = {
+      format,
+      ids,
+    };
+
+    const result = await exportMemos(options);
+
+    // 使用 Tauri 保存对话框
+    const filters = format === "markdown"
+      ? [{ name: "Markdown", extensions: ["md"] }]
+      : [{ name: "JSON", extensions: ["json"] }];
+
+    const filePath = await save({
+      defaultPath: result.filename,
+      filters,
+    });
+
+    if (filePath) {
+      await writeTextFile(filePath, result.content);
+    }
+  }
+
+  // 包含回收站的总数
+  const totalCountWithTrash = computed(() => totalCount.value + trashCount.value);
 
   // 提取所有标签（按使用频率降序排列）
   const allTags = computed(() => {
@@ -117,16 +175,41 @@ export const useMemoStore = defineStore("memo", () => {
     loading.value = true;
     console.log("[Store] Starting fetchMemos...");
     try {
-      memos.value = await getAllMemos();
-      console.log("[Store] Memos loaded:", memos.value.length);
+      // 获取总数
+      totalCount.value = await getMemoCount();
+      // 初始加载第一页
+      memos.value = await getMemosByPage(0, PAGE_SIZE);
+      hasMore.value = memos.value.length < totalCount.value;
+      console.log("[Store] Memos loaded:", memos.value.length, "total:", totalCount.value);
       todayCount.value = await getTodayCount();
       console.log("[Store] Today count:", todayCount.value);
       heatmapData.value = await getHeatmapData();
       console.log("[Store] Heatmap data:", heatmapData.value.length);
+      // 加载回收站数量
+      trashCount.value = await getTrashCount();
+      console.log("[Store] Trash count:", trashCount.value);
     } catch (e) {
       console.error("[Store] Error fetching memos:", e);
     } finally {
       loading.value = false;
+    }
+  }
+
+  // 加载更多 memos
+  async function loadMoreMemos() {
+    if (loadingMore.value || !hasMore.value) return;
+
+    loadingMore.value = true;
+    console.log("[Store] Loading more memos...");
+    try {
+      const newMemos = await getMemosByPage(memos.value.length, PAGE_SIZE);
+      memos.value = [...memos.value, ...newMemos];
+      hasMore.value = memos.value.length < totalCount.value;
+      console.log("[Store] More memos loaded:", newMemos.length, "hasMore:", hasMore.value);
+    } catch (e) {
+      console.error("[Store] Error loading more memos:", e);
+    } finally {
+      loadingMore.value = false;
     }
   }
 
@@ -159,11 +242,120 @@ export const useMemoStore = defineStore("memo", () => {
     }
   }
 
-  // 删除 memo
+  // 删除 memo（软删除到回收站）
   async function removeMemo(id: number) {
-    await deleteMemo(id);
+    await softDeleteMemo(id);
     memos.value = memos.value.filter((m) => m.id !== id);
     todayCount.value = Math.max(0, todayCount.value - 1);
+    trashCount.value++;
+  }
+
+  // 从回收站恢复 memo
+  async function restoreMemoFromTrash(id: number) {
+    await restoreMemo(id);
+    trashMemos.value = trashMemos.value.filter((m) => m.id !== id);
+    trashCount.value = Math.max(0, trashCount.value - 1);
+  }
+
+  // 批量从回收站恢复
+  async function restoreMemosFromTrash() {
+    if (selectedIds.value.size === 0) return;
+
+    const idsToRestore = Array.from(selectedIds.value);
+    for (const id of idsToRestore) {
+      await restoreMemo(id); // 使用数据库层的 restoreMemo
+    }
+
+    // 从回收站列表中移除
+    trashMemos.value = trashMemos.value.filter((m) => !selectedIds.value.has(m.id));
+    trashCount.value = Math.max(0, trashCount.value - idsToRestore.length);
+    clearSelection();
+    isBatchMode.value = false;
+  }
+
+  // 永久删除 memo
+  async function permanentDelete(id: number) {
+    await permanentDeleteMemo(id);
+    trashMemos.value = trashMemos.value.filter((m) => m.id !== id);
+    trashCount.value = Math.max(0, trashCount.value - 1);
+  }
+
+  // 批量永久删除
+  async function batchPermanentDelete() {
+    if (selectedIds.value.size === 0) return;
+
+    const count = selectedIds.value.size;
+    if (!confirm(`确定要永久删除选中的 ${count} 条记录吗？此操作不可恢复！`)) {
+      return;
+    }
+
+    const idsToDelete = Array.from(selectedIds.value);
+    for (const id of idsToDelete) {
+      await permanentDeleteMemo(id);
+    }
+
+    // 从回收站列表中移除
+    trashMemos.value = trashMemos.value.filter((m) => !selectedIds.value.has(m.id));
+    trashCount.value = Math.max(0, trashCount.value - idsToDelete.length);
+    clearSelection();
+    isBatchMode.value = false;
+  }
+
+  // 获取回收站内容
+  async function fetchTrashMemos() {
+    loading.value = true;
+    try {
+      trashMemos.value = await getTrashMemos();
+      trashCount.value = await getTrashCount();
+    } catch (e) {
+      console.error("[Store] Error fetching trash memos:", e);
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  // 切换回收站模式
+  async function toggleTrashMode() {
+    isTrashMode.value = !isTrashMode.value;
+    if (isTrashMode.value) {
+      await fetchTrashMemos();
+      clearSelection();
+    } else {
+      trashMemos.value = [];
+    }
+  }
+
+  // 清空回收站
+  async function cleanTrash() {
+    if (trashCount.value === 0) return;
+
+    if (!confirm(`确定要清空回收站吗？将永久删除 ${trashCount.value} 条记录，此操作不可恢复！`)) {
+      return;
+    }
+
+    try {
+      // 永久删除所有回收站中的 memo
+      for (const memo of trashMemos.value) {
+        await permanentDeleteMemo(memo.id);
+      }
+      trashMemos.value = [];
+      trashCount.value = 0;
+    } catch (e) {
+      console.error("[Store] Error cleaning trash:", e);
+    }
+  }
+
+  // 清理过期回收站（启动时调用）
+  async function cleanupExpiredTrash() {
+    try {
+      const cleanedCount = await cleanExpiredTrash();
+      if (cleanedCount > 0) {
+        console.log("[Store] Cleaned expired trash:", cleanedCount);
+        trashCount.value = await getTrashCount();
+      }
+    } catch (e) {
+      console.error("[Store] Error cleaning expired trash:", e);
+    }
   }
 
   // 设置搜索关键词
@@ -179,15 +371,24 @@ export const useMemoStore = defineStore("memo", () => {
   return {
     memos,
     loading,
+    loadingMore,
+    hasMore,
     searchQuery,
     selectedTag,
     todayCount,
+    totalCount,
+    totalCountWithTrash,
     heatmapData,
     allTags,
     filteredMemos,
     selectedIds,
     isBatchMode,
+    // 回收站相关
+    trashMemos,
+    isTrashMode,
+    trashCount,
     fetchMemos,
+    loadMoreMemos,
     refreshHeatmap,
     addMemo,
     editMemo,
@@ -199,5 +400,15 @@ export const useMemoStore = defineStore("memo", () => {
     selectAll,
     clearSelection,
     batchDeleteMemo,
+    batchExportMemo,
+    // 回收站方法
+    fetchTrashMemos,
+    toggleTrashMode,
+    restoreMemoFromTrash,
+    restoreMemosFromTrash,
+    permanentDelete,
+    batchPermanentDelete,
+    cleanTrash,
+    cleanupExpiredTrash,
   };
 });

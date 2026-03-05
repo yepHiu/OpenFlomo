@@ -1,61 +1,58 @@
 <script setup lang="ts">
+import { ref, onMounted, onUnmounted, computed } from "vue";
 import { useMemoStore } from "../../stores/memoStore";
 import MemoCard from "./MemoCard.vue";
 
 const memoStore = useMemoStore();
+const listRef = ref<HTMLElement | null>(null);
 
-function handleBatchDelete() {
-  const count = memoStore.selectedIds.size;
-  // 如果选中数量超过5条，增加更明显的警告
-  if (count > 5) {
-    if (!confirm(`⚠️ 危险操作！你即将删除 ${count} 条记录，此操作无法撤销。\n\n确定要继续吗？`)) {
-      return;
-    }
-  } else {
-    if (!confirm(`确定要删除选中的 ${count} 条记录吗？此操作无法撤销。`)) {
-      return;
-    }
+// 根据模式显示不同的列表
+const currentMemos = computed(() => {
+  return memoStore.isTrashMode ? memoStore.trashMemos : memoStore.filteredMemos;
+});
+
+function handleScroll() {
+  if (!listRef.value || memoStore.isTrashMode) return;
+
+  const { scrollTop, scrollHeight, clientHeight } = listRef.value;
+  // 滚动到距离底部 100px 时加载更多
+  if (scrollHeight - scrollTop - clientHeight < 100) {
+    memoStore.loadMoreMemos();
   }
-  memoStore.batchDeleteMemo();
 }
+
+onMounted(() => {
+  if (listRef.value) {
+    listRef.value.addEventListener("scroll", handleScroll);
+  }
+});
+
+onUnmounted(() => {
+  if (listRef.value) {
+    listRef.value.removeEventListener("scroll", handleScroll);
+  }
+});
 </script>
 
 <template>
-  <div class="memo-list">
-    <!-- 批量操作栏 -->
-    <div v-if="memoStore.isBatchMode" class="batch-toolbar">
-      <div class="batch-info">
-        <span>已选择 {{ memoStore.selectedIds.size }} 项</span>
-      </div>
-      <div class="batch-actions">
-        <button class="batch-btn" @click="memoStore.selectAll">全选</button>
-        <button class="batch-btn" @click="memoStore.clearSelection">清空</button>
-        <button
-          class="batch-btn delete"
-          :disabled="memoStore.selectedIds.size === 0"
-          @click="handleBatchDelete"
-        >
-          删除选中
-        </button>
-        <button class="batch-btn cancel" @click="memoStore.toggleBatchMode">取消</button>
-      </div>
-    </div>
-
-    <!-- 非批量模式下的批量选择入口 -->
-    <div v-if="!memoStore.isBatchMode && memoStore.memos.length > 0" class="batch-entry">
-      <button class="batch-entry-btn" @click="memoStore.toggleBatchMode">
-        <i class="pi pi-check-square"></i>
-        批量管理
-      </button>
-    </div>
-
+  <div ref="listRef" class="memo-list">
     <div v-if="memoStore.loading" class="loading">
       <i class="pi pi-spin pi-spinner"></i>
       加载中...
     </div>
 
+    <!-- 回收站空状态 -->
     <div
-      v-else-if="memoStore.filteredMemos.length === 0"
+      v-else-if="memoStore.isTrashMode && memoStore.trashMemos.length === 0"
+      class="empty-state"
+    >
+      <i class="pi pi-trash"></i>
+      <p>回收站是空的</p>
+    </div>
+
+    <!-- 普通模式空状态 -->
+    <div
+      v-else-if="!memoStore.isTrashMode && currentMemos.length === 0"
       class="empty-state"
     >
       <i class="pi pi-inbox"></i>
@@ -68,10 +65,22 @@ function handleBatchDelete() {
 
     <template v-else>
       <MemoCard
-        v-for="memo in memoStore.filteredMemos"
+        v-for="memo in currentMemos"
         :key="memo.id"
         :memo="memo"
+        :is-trash-mode="memoStore.isTrashMode"
       />
+
+      <!-- 加载更多（非回收站模式） -->
+      <div v-if="!memoStore.isTrashMode && memoStore.loadingMore" class="loading-more">
+        <i class="pi pi-spin pi-spinner"></i>
+        加载中...
+      </div>
+
+      <!-- 没有更多了（非回收站模式） -->
+      <div v-else-if="!memoStore.isTrashMode && !memoStore.hasMore && currentMemos.length > 0" class="no-more">
+        没有更多了
+      </div>
     </template>
   </div>
 </template>
@@ -83,91 +92,6 @@ function handleBatchDelete() {
   gap: 12px;
 }
 
-.batch-entry {
-  margin-bottom: 8px;
-
-  .batch-entry-btn {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    background: var(--surface-ground);
-    border: 1px solid var(--surface-border);
-    border-radius: var(--border-radius-sm);
-    padding: 8px 14px;
-    font-size: 13px;
-    color: var(--text-color-secondary);
-    cursor: pointer;
-    transition: all 0.2s ease;
-
-    &:hover {
-      background: var(--surface-card);
-      border-color: var(--primary-color);
-      color: var(--primary-color);
-    }
-
-    i {
-      font-size: 14px;
-    }
-  }
-}
-
-.batch-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 16px;
-  background: var(--surface-card);
-  border-radius: var(--border-radius);
-  box-shadow: var(--shadow-sm);
-  margin-bottom: 8px;
-
-  .batch-info {
-    font-size: 14px;
-    color: var(--text-color);
-    font-weight: 500;
-  }
-
-  .batch-actions {
-    display: flex;
-    gap: 8px;
-
-    .batch-btn {
-      padding: 6px 12px;
-      border-radius: var(--border-radius-sm);
-      font-size: 13px;
-      cursor: pointer;
-      border: 1px solid var(--surface-border);
-      background: var(--surface-ground);
-      color: var(--text-color);
-      transition: all 0.2s ease;
-
-      &:hover:not(:disabled) {
-        background: var(--surface-card);
-        border-color: var(--primary-color);
-      }
-
-      &:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-      }
-
-      &.delete {
-        background: #ffebee;
-        border-color: #ffcdd2;
-        color: #c62828;
-
-        &:hover:not(:disabled) {
-          background: #ffcdd2;
-        }
-      }
-
-      &.cancel {
-        background: var(--surface-ground);
-      }
-    }
-  }
-}
-
 .loading {
   display: flex;
   align-items: center;
@@ -175,6 +99,23 @@ function handleBatchDelete() {
   gap: 10px;
   padding: 40px;
   color: var(--text-color-secondary);
+}
+
+.loading-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 20px;
+  color: var(--text-color-secondary);
+  font-size: 13px;
+}
+
+.no-more {
+  text-align: center;
+  padding: 20px;
+  color: var(--text-color-secondary);
+  font-size: 13px;
 }
 
 .empty-state {
