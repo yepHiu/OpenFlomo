@@ -2,10 +2,12 @@
 import { ref } from "vue";
 import { useSettingsStore } from "../stores/settingsStore";
 import { useRouter } from "vue-router";
+import { useI18n } from "vue-i18n";
 import DataModal from "../components/DataModal.vue";
 
 const settingsStore = useSettingsStore();
 const router = useRouter();
+const { t } = useI18n();
 const showDataModal = ref(false);
 
 function goBack() {
@@ -19,16 +21,16 @@ function goBack() {
       <button class="back-btn" @click="goBack">
         <i class="pi pi-arrow-left"></i>
       </button>
-      <h1>设置</h1>
+      <h1>{{ t('app.settings') }}</h1>
     </div>
 
     <div class="settings-content">
       <div class="settings-section">
-        <h2>外观</h2>
+        <h2>{{ t('settings.appearance') }}</h2>
         <div class="setting-item">
           <div class="setting-info">
             <i class="pi pi-moon"></i>
-            <span>深色模式</span>
+            <span>{{ t('settings.darkMode') }}</span>
           </div>
           <label class="toggle">
             <input
@@ -39,21 +41,30 @@ function goBack() {
             <span class="slider"></span>
           </label>
         </div>
+        <div class="setting-item">
+          <div class="setting-info">
+            <i class="pi pi-globe"></i>
+            <span>{{ t('settings.language') }}</span>
+          </div>
+          <button class="lang-btn" @click="settingsStore.toggleLocale()">
+            {{ settingsStore.locale === 'zh-CN' ? '中文' : 'English' }}
+          </button>
+        </div>
       </div>
 
       <div class="settings-section">
-        <h2>关于</h2>
+        <h2>{{ t('settings.about') }}</h2>
         <div class="setting-item">
           <div class="setting-info">
             <i class="pi pi-user"></i>
-            <span>作者</span>
+            <span>{{ t('settings.author') }}</span>
           </div>
           <span class="version">奶茶不加冰</span>
         </div>
         <div class="setting-item">
           <div class="setting-info">
             <i class="pi pi-code"></i>
-            <span>Powered by</span>
+            <span>{{ t('settings.poweredBy') }}</span>
           </div>
           <span class="version">MiniMax-M2.5 + Claude Code</span>
         </div>
@@ -67,21 +78,21 @@ function goBack() {
         <div class="setting-item">
           <div class="setting-info">
             <i class="pi pi-info-circle"></i>
-            <span>版本</span>
+            <span>{{ t('settings.version') }}</span>
           </div>
           <span class="version">v{{ settingsStore.version }}</span>
         </div>
       </div>
 
       <div class="settings-section">
-        <h2>数据管理</h2>
+        <h2>{{ t('settings.dataManagement') }}</h2>
         <div class="data-manage-btn" @click="showDataModal = true">
           <div class="btn-icon">
             <i class="pi pi-database"></i>
           </div>
           <div class="btn-text">
-            <span class="btn-title">数据导入导出</span>
-            <span class="btn-desc">导入、导出、备份您的数据</span>
+            <span class="btn-title">{{ t('settings.importExport') }}</span>
+            <span class="btn-desc">{{ t('settings.importExportDesc') }}</span>
           </div>
           <i class="pi pi-chevron-right arrow"></i>
         </div>
@@ -233,6 +244,23 @@ function goBack() {
 
   input:checked + .slider:before {
     transform: translateX(22px);
+  }
+}
+
+// 语言切换按钮
+.lang-btn {
+  padding: 6px 16px;
+  border: 1px solid var(--surface-border);
+  border-radius: var(--border-radius-sm);
+  background: var(--surface-ground);
+  color: var(--text-color);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: var(--surface-card);
+    border-color: var(--primary-color);
   }
 }
 

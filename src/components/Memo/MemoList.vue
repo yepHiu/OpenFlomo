@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed } from "vue";
 import { useMemoStore } from "../../stores/memoStore";
+import { useI18n } from "vue-i18n";
 import MemoCard from "./MemoCard.vue";
 
 const memoStore = useMemoStore();
 const listRef = ref<HTMLElement | null>(null);
+const { t } = useI18n();
 
 // 根据模式显示不同的列表
 const currentMemos = computed(() => {
@@ -38,7 +40,7 @@ onUnmounted(() => {
   <div ref="listRef" class="memo-list">
     <div v-if="memoStore.loading" class="loading">
       <i class="pi pi-spin pi-spinner"></i>
-      加载中...
+      {{ t('memo.loading') || '加载中...' }}
     </div>
 
     <!-- 回收站空状态 -->
@@ -47,7 +49,7 @@ onUnmounted(() => {
       class="empty-state"
     >
       <i class="pi pi-trash"></i>
-      <p>回收站是空的</p>
+      <p>{{ t('sidebar.trashEmpty') }}</p>
     </div>
 
     <!-- 普通模式空状态 -->
@@ -56,11 +58,9 @@ onUnmounted(() => {
       class="empty-state"
     >
       <i class="pi pi-inbox"></i>
-      <p v-if="memoStore.searchQuery">没有找到匹配的结果</p>
-      <p v-else-if="memoStore.selectedTag">
-        暂无带有 #{{ memoStore.selectedTag }} 标签的记录
-      </p>
-      <p v-else>还没有任何记录，开始写下你的第一条想法吧</p>
+      <p v-if="memoStore.searchQuery">{{ t('memo.noSearchResults') }}</p>
+      <p v-else-if="memoStore.selectedTag">{{ t('memo.noTagRecords', { tag: memoStore.selectedTag }) }}</p>
+      <p v-else>{{ t('memo.noRecords') }}</p>
     </div>
 
     <template v-else>
@@ -74,12 +74,12 @@ onUnmounted(() => {
       <!-- 加载更多（非回收站模式） -->
       <div v-if="!memoStore.isTrashMode && memoStore.loadingMore" class="loading-more">
         <i class="pi pi-spin pi-spinner"></i>
-        加载中...
+        {{ t('memo.loading') || '加载中...' }}
       </div>
 
       <!-- 没有更多了（非回收站模式） -->
       <div v-else-if="!memoStore.isTrashMode && !memoStore.hasMore && currentMemos.length > 0" class="no-more">
-        没有更多了
+        {{ t('memo.noMore') || '没有更多了' }}
       </div>
     </template>
   </div>

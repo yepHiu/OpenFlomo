@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { ref, computed, nextTick } from "vue";
 import { useMemoStore } from "../../stores/memoStore";
+import { useI18n } from "vue-i18n";
 
 const memoStore = useMemoStore();
+const { t } = useI18n();
 const rawInput = ref("");
 const isSubmitting = ref(false);
 const textareaRef = ref<HTMLTextAreaElement | null>(null);
@@ -144,7 +146,7 @@ async function handleSubmit() {
     <textarea
       ref="textareaRef"
       v-model="rawInput"
-      placeholder="记录今天的学习、思考或灵感... (支持 #标签、- 列表、**加粗**)"
+      :placeholder="t('memo.placeholder')"
       @keydown="handleKeydown"
       @input="handleInput"
     ></textarea>

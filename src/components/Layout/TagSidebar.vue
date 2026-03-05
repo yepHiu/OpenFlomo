@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { useMemoStore } from "../../stores/memoStore";
 import { useRouter } from "vue-router";
+import { useI18n } from "vue-i18n";
 import Heatmap from "./Heatmap.vue";
 
 const memoStore = useMemoStore();
 const router = useRouter();
+const { t } = useI18n();
 
 function selectTag(tag: string) {
   if (memoStore.isTrashMode) return;
@@ -76,7 +78,7 @@ function refreshData() {
         @keydown="(e) => e.key === 'Enter' && (memoStore.setSelectedTag(null), memoStore.isTrashMode && memoStore.toggleTrashMode())"
       >
         <i class="pi pi-home"></i>
-        <span>全部记录</span>
+        <span>{{ t('sidebar.allRecords') }}</span>
         <span class="count">{{ memoStore.totalCount }}</span>
       </div>
     </div>
@@ -85,11 +87,11 @@ function refreshData() {
     <div class="sidebar-stats">
       <div class="stat-item">
         <span class="stat-value">{{ memoStore.totalCountWithTrash }}</span>
-        <span class="stat-label">总记录</span>
+        <span class="stat-label">{{ t('sidebar.totalRecords') }}</span>
       </div>
       <div class="stat-item">
         <span class="stat-value">{{ memoStore.todayCount }}</span>
-        <span class="stat-label">今日</span>
+        <span class="stat-label">{{ t('sidebar.today') }}</span>
       </div>
     </div>
 
@@ -103,7 +105,7 @@ function refreshData() {
         @keydown="(e) => e.key === 'Enter' && goToTrash()"
       >
         <i class="pi pi-trash"></i>
-        <span>回收站</span>
+        <span>{{ t('sidebar.trash') }}</span>
         <span v-if="memoStore.trashCount > 0" class="count badge">{{ memoStore.trashCount }}</span>
       </div>
     </div>
@@ -112,7 +114,7 @@ function refreshData() {
     <Heatmap />
 
     <div class="tag-header">
-      <h3>标签</h3>
+      <h3>{{ t('sidebar.tags') }}</h3>
     </div>
 
     <div class="tag-section">
@@ -134,7 +136,7 @@ function refreshData() {
           <span class="count">{{ tag.count }}</span>
         </li>
       </ul>
-      <p v-else class="empty-tags">暂无标签</p>
+      <p v-else class="empty-tags">{{ t('sidebar.noTags') }}</p>
     </div>
   </div>
 </template>

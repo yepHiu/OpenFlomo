@@ -1,0 +1,73 @@
+{
+  "app": {
+    "title": "OpenFlomo",
+    "home": "Home",
+    "settings": "Settings"
+  },
+  "sidebar": {
+    "allRecords": "All Records",
+    "totalRecords": "Total",
+    "today": "Today",
+    "tags": "Tags",
+    "noTags": "No tags yet",
+    "trash": "Trash",
+    "trashEmpty": "Trash is empty"
+  },
+  "memo": {
+    "placeholder": "Write your thoughts...",
+    "noRecords": "No records yet, start writing your first thought!",
+    "noSearchResults": "No matching results found",
+    "noTagRecords": "No records with tag #{tag}",
+    "edit": "Edit",
+    "delete": "Delete",
+    "confirmDelete": "Move this record to trash?",
+    "moveToTrash": "Move to Trash"
+  },
+  "trash": {
+    "title": "Trash",
+    "description": "Deleted records will be kept for 30 days",
+    "restore": "Restore",
+    "permanentDelete": "Delete Permanently",
+    "confirmPermanentDelete": "Are you sure? This action cannot be undone!",
+    "cleanTrash": "Empty Trash",
+    "confirmCleanTrash": "Permanently delete {count} records? This action cannot be undone!",
+    "remainingDays": "{days} days remaining",
+    "deletedAt": "Deleted at {time}"
+  },
+  "batch": {
+    "selectAll": "Select All",
+    "clearSelection": "Clear",
+    "exportSelected": "Export Selected",
+    "deleteSelected": "Delete Selected",
+    "restoreSelected": "Restore Selected",
+    "permanentDeleteSelected": "Delete Permanently",
+    "cancel": "Cancel",
+    "selected": "{count} selected"
+  },
+  "settings": {
+    "appearance": "Appearance",
+    "darkMode": "Dark Mode",
+    "language": "Language",
+    "about": "About",
+    "author": "Author",
+    "poweredBy": "Powered by",
+    "version": "Version",
+    "dataManagement": "Data Management",
+    "importExport": "Import & Export",
+    "importExportDesc": "Import, export and backup your data"
+  },
+  "data": {
+    "title": "Data Management",
+    "export": "Export Data",
+    "import": "Import Data",
+    "exportJson": "Export as JSON",
+    "exportMarkdown": "Export as Markdown",
+    "importFile": "Select File",
+    "importSuccess": "Successfully imported {count} records",
+    "close": "Close"
+  },
+  "search": {
+    "placeholder": "Search records...",
+    "clear": "Clear"
+  }
+}

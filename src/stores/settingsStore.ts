@@ -1,5 +1,6 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
+import { setLocale, getLocale } from "../i18n";
 
 // 动态获取版本号
 async function getVersion() {
@@ -23,6 +24,9 @@ export const useSettingsStore = defineStore("settings", () => {
   const version = ref('1.0.0');
   getVersion().then(v => version.value = v);
 
+  // 语言设置
+  const locale = ref<'zh-CN' | 'en'>(getLocale());
+
   // 切换深色模式
   function toggleDarkMode() {
     isDarkMode.value = !isDarkMode.value;
@@ -40,13 +44,29 @@ export const useSettingsStore = defineStore("settings", () => {
     }
   }
 
+  // 切换语言
+  function toggleLocale() {
+    const newLocale = locale.value === 'zh-CN' ? 'en' : 'zh-CN';
+    setLocale(newLocale);
+    locale.value = newLocale;
+  }
+
+  // 设置语言
+  function setAppLocale(newLocale: 'zh-CN' | 'en') {
+    setLocale(newLocale);
+    locale.value = newLocale;
+  }
+
   // 初始化时应用主题
   applyTheme();
 
   return {
     isDarkMode,
     version,
+    locale,
     toggleDarkMode,
     applyTheme,
+    toggleLocale,
+    setAppLocale,
   };
 });

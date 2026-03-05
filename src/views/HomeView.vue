@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
 import { useMemoStore } from "../stores/memoStore";
+import { useI18n } from "vue-i18n";
 import MemoInput from "../components/Memo/MemoInput.vue";
 import MemoList from "../components/Memo/MemoList.vue";
 import TagSidebar from "../components/Layout/TagSidebar.vue";
 
 const memoStore = useMemoStore();
 const searchQuery = ref("");
+const { t } = useI18n();
 
 // 应用启动时清理过期回收站
 onMounted(async () => {
@@ -39,7 +41,7 @@ function clearSearch() {
             <input
               v-model="searchQuery"
               type="text"
-              placeholder="搜索记录..."
+              :placeholder="t('search.placeholder')"
               @input="handleSearch"
               @keyup.escape="clearSearch"
             />
@@ -53,15 +55,15 @@ function clearSearch() {
 
         <!-- 当前位置标签 -->
         <div v-if="memoStore.selectedTag && !memoStore.isTrashMode" class="current-filter">
-          <span class="filter-label">当前筛选：</span>
+          <span class="filter-label">{{ t('search.clear') }}：</span>
           <span class="tag">#{{ memoStore.selectedTag }}</span>
           <i class="pi pi-times" @click="memoStore.setSelectedTag(null)"></i>
         </div>
 
         <!-- 回收站标题 -->
         <div v-if="memoStore.isTrashMode" class="trash-header">
-          <h3><i class="pi pi-trash"></i> 回收站</h3>
-          <p class="trash-tip">已删除的记录会在此保留 30 天</p>
+          <h3><i class="pi pi-trash"></i> {{ t('trash.title') }}</h3>
+          <p class="trash-tip">{{ t('trash.description') }}</p>
         </div>
 
         <!-- 记录输入框（非回收站模式显示） -->
@@ -71,11 +73,11 @@ function clearSearch() {
       <!-- 批量操作栏（固定不滚动） -->
       <div v-if="memoStore.isBatchMode" class="batch-toolbar-fixed">
         <div class="batch-info">
-          <span>已选择 {{ memoStore.selectedIds.size }} 项</span>
+          <span>{{ t('batch.selected', { count: memoStore.selectedIds.size }) }}</span>
         </div>
         <div class="batch-actions">
-          <button class="batch-btn" @click="memoStore.selectAll">全选</button>
-          <button class="batch-btn" @click="memoStore.clearSelection">清空</button>
+          <button class="batch-btn" @click="memoStore.selectAll">{{ t('batch.selectAll') }}</button>
+          <button class="batch-btn" @click="memoStore.clearSelection">{{ t('batch.clearSelection') }}</button>
 
           <!-- 回收站模式下的操作 -->
           <template v-if="memoStore.isTrashMode">
@@ -84,14 +86,14 @@ function clearSearch() {
               :disabled="memoStore.selectedIds.size === 0"
               @click="memoStore.restoreMemosFromTrash"
             >
-              恢复选中
+              {{ t('batch.restoreSelected') }}
             </button>
             <button
               class="batch-btn permanent-delete"
               :disabled="memoStore.selectedIds.size === 0"
               @click="memoStore.batchPermanentDelete"
             >
-              彻底删除
+              {{ t('batch.permanentDeleteSelected') }}
             </button>
           </template>
 
@@ -102,18 +104,18 @@ function clearSearch() {
               :disabled="memoStore.selectedIds.size === 0"
               @click="memoStore.batchExportMemo('markdown')"
             >
-              导出选中
+              {{ t('batch.exportSelected') }}
             </button>
             <button
               class="batch-btn delete"
               :disabled="memoStore.selectedIds.size === 0"
               @click="memoStore.batchDeleteMemo"
             >
-              删除选中
+              {{ t('batch.deleteSelected') }}
             </button>
           </template>
 
-          <button class="batch-btn cancel" @click="memoStore.toggleBatchMode">取消</button>
+          <button class="batch-btn cancel" @click="memoStore.toggleBatchMode">{{ t('batch.cancel') }}</button>
         </div>
       </div>
 
@@ -121,7 +123,7 @@ function clearSearch() {
       <div v-if="!memoStore.isBatchMode && !memoStore.isTrashMode && memoStore.memos.length > 0" class="batch-entry">
         <button class="batch-entry-btn" @click="memoStore.toggleBatchMode">
           <i class="pi pi-check-square"></i>
-          批量管理
+          {{ t('batch.selectAll').replace('全选', '批量管理') }}
         </button>
       </div>
 
@@ -129,11 +131,11 @@ function clearSearch() {
       <div v-if="!memoStore.isBatchMode && memoStore.isTrashMode && memoStore.trashMemos.length > 0" class="batch-entry">
         <button class="batch-entry-btn" @click="memoStore.toggleBatchMode">
           <i class="pi pi-check-square"></i>
-          批量管理
+          {{ t('batch.selectAll').replace('全选', '批量管理') }}
         </button>
         <button class="batch-entry-btn danger" @click="memoStore.cleanTrash">
           <i class="pi pi-trash"></i>
-          清空回收站
+          {{ t('trash.cleanTrash') }}
         </button>
       </div>
 

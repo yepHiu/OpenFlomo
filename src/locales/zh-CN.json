@@ -1,0 +1,75 @@
+{
+  "app": {
+    "title": "OpenFlomo",
+    "home": "首页",
+    "settings": "设置"
+  },
+  "sidebar": {
+    "allRecords": "全部记录",
+    "totalRecords": "总记录",
+    "today": "今日",
+    "tags": "标签",
+    "noTags": "暂无标签",
+    "trash": "回收站",
+    "trashEmpty": "回收站是空的"
+  },
+  "memo": {
+    "placeholder": "记录今天的学习、思考或灵感... (支持 #标签、- 列表、**加粗**)",
+    "noRecords": "还没有任何记录，开始写下你的第一条想法吧",
+    "noSearchResults": "没有找到匹配的结果",
+    "noTagRecords": "暂无带有 #{tag} 标签的记录",
+    "loading": "加载中...",
+    "noMore": "没有更多了",
+    "edit": "编辑",
+    "delete": "删除",
+    "confirmDelete": "确定要将这条记录移入回收站吗？",
+    "moveToTrash": "删除到回收站"
+  },
+  "trash": {
+    "title": "回收站",
+    "description": "已删除的记录会在此保留 30 天",
+    "restore": "恢复",
+    "permanentDelete": "彻底删除",
+    "confirmPermanentDelete": "确定要彻底删除这条记录吗？此操作不可恢复！",
+    "cleanTrash": "清空回收站",
+    "confirmCleanTrash": "确定要清空回收站吗？将永久删除 {count} 条记录，此操作不可恢复！",
+    "remainingDays": "剩余 {days} 天",
+    "deletedAt": "删除于 {time}"
+  },
+  "batch": {
+    "selectAll": "全选",
+    "clearSelection": "清空",
+    "exportSelected": "导出选中",
+    "deleteSelected": "删除选中",
+    "restoreSelected": "恢复选中",
+    "permanentDeleteSelected": "彻底删除",
+    "cancel": "取消",
+    "selected": "已选择 {count} 项"
+  },
+  "settings": {
+    "appearance": "外观",
+    "darkMode": "深色模式",
+    "language": "语言",
+    "about": "关于",
+    "author": "作者",
+    "poweredBy": "技术支持",
+    "version": "版本",
+    "dataManagement": "数据管理",
+    "importExport": "数据导入导出",
+    "importExportDesc": "导入、导出、备份您的数据"
+  },
+  "data": {
+    "title": "数据管理",
+    "export": "导出数据",
+    "import": "导入数据",
+    "exportJson": "导出为 JSON",
+    "exportMarkdown": "导出为 Markdown",
+    "importFile": "选择文件",
+    "importSuccess": "成功导入 {count} 条记录",
+    "close": "关闭"
+  },
+  "search": {
+    "placeholder": "搜索记录...",
+    "clear": "清除"
+  }
+}
