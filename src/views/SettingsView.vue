@@ -2,83 +2,14 @@
 import { ref } from "vue";
 import { useSettingsStore } from "../stores/settingsStore";
 import { useRouter } from "vue-router";
-import { exportMemos, importMemos, type ExportData } from "../services/database";
-import { save, open } from "@tauri-apps/plugin-dialog";
-import { writeTextFile } from "@tauri-apps/plugin-fs";
+import DataModal from "../components/DataModal.vue";
 
 const settingsStore = useSettingsStore();
 const router = useRouter();
-const isExporting = ref(false);
-const isImporting = ref(false);
+const showDataModal = ref(false);
 
 function goBack() {
   router.push("/");
-}
-
-// 导出 memo
-async function handleExport() {
-  if (isExporting.value) return;
-  isExporting.value = true;
-
-  try {
-    const data = await exportMemos();
-    const jsonStr = JSON.stringify(data, null, 2);
-
-    // 使用系统对话框选择保存位置
-    const filePath = await save({
-      defaultPath: `openflomo-export-${new Date().toISOString().split("T")[0]}.json`,
-      filters: [{ name: "JSON", extensions: ["json"] }],
-    });
-
-    if (filePath) {
-      await writeTextFile(filePath, jsonStr);
-      alert(`导出成功，共 ${data.memos.length} 条记录`);
-    }
-  } catch (e) {
-    console.error("Export failed:", e);
-    alert("导出失败: " + e);
-  } finally {
-    isExporting.value = false;
-  }
-}
-
-// 导入 memo
-async function handleImport() {
-  if (isImporting.value) return;
-  isImporting.value = true;
-
-  try {
-    // 使用系统对话框选择文件
-    const filePath = await open({
-      filters: [{ name: "JSON", extensions: ["json"] }],
-      multiple: false,
-    });
-
-    if (!filePath) {
-      isImporting.value = false;
-      return;
-    }
-
-    // 读取文件内容
-    const { readTextFile } = await import("@tauri-apps/plugin-fs");
-    const text = await readTextFile(filePath as string);
-    const data: ExportData = JSON.parse(text);
-
-    if (!data.version || !data.memos) {
-      throw new Error("无效的文件格式");
-    }
-
-    const count = await importMemos(data);
-    alert(`导入成功，共 ${count} 条记录`);
-
-    // 刷新页面以更新数据
-    window.location.reload();
-  } catch (e) {
-    console.error("Import failed:", e);
-    alert("导入失败: " + e);
-  } finally {
-    isImporting.value = false;
-  }
 }
 </script>
 
@@ -138,25 +69,27 @@ async function handleImport() {
             <i class="pi pi-info-circle"></i>
             <span>版本</span>
           </div>
-          <span class="version">v1.0.1</span>
+          <span class="version">v{{ settingsStore.version }}</span>
         </div>
       </div>
 
       <div class="settings-section">
         <h2>数据管理</h2>
-        <div class="data-actions">
-          <button class="btn-export" @click="handleExport" :disabled="isExporting">
-            <i class="pi pi-download"></i>
-            <span>{{ isExporting ? "导出中..." : "导出数据" }}</span>
-          </button>
-          <button class="btn-import" @click="handleImport" :disabled="isImporting">
-            <i class="pi pi-upload"></i>
-            <span>{{ isImporting ? "导入中..." : "导入数据" }}</span>
-          </button>
+        <div class="data-manage-btn" @click="showDataModal = true">
+          <div class="btn-icon">
+            <i class="pi pi-database"></i>
+          </div>
+          <div class="btn-text">
+            <span class="btn-title">数据导入导出</span>
+            <span class="btn-desc">导入、导出、备份您的数据</span>
+          </div>
+          <i class="pi pi-chevron-right arrow"></i>
         </div>
-        <p class="data-hint">导出将保存为 JSON 文件，导入支持 JSON 格式</p>
       </div>
     </div>
+
+    <!-- 数据管理浮窗 -->
+    <DataModal v-if="showDataModal" @close="showDataModal = false" />
   </div>
 </template>
 
@@ -365,5 +298,178 @@ async function handleImport() {
   font-size: 12px;
   color: var(--text-color-secondary);
   text-align: center;
+}
+
+// 导出选项样式
+.export-option {
+  margin-bottom: 16px;
+
+  label {
+    display: block;
+    font-size: 13px;
+    color: var(--text-color);
+    margin-bottom: 8px;
+    font-weight: 500;
+  }
+}
+
+.format-select {
+  display: flex;
+  gap: 16px;
+
+  .radio-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    font-size: 14px;
+
+    input[type="radio"] {
+      accent-color: var(--primary-color);
+    }
+  }
+}
+
+.date-range {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  input[type="date"] {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid var(--surface-border);
+    border-radius: var(--border-radius-sm);
+    font-size: 14px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--surface-ground);
+    color: var(--text-color);
+    color-scheme: light;
+
+    &:focus {
+      outline: none;
+      border-color: var(--primary-color);
+    }
+
+    &::-webkit-calendar-picker-indicator {
+      cursor: pointer;
+    }
+  }
+
+  span {
+    color: var(--text-color-secondary);
+    font-size: 13px;
+  }
+}
+
+.date-hint {
+  margin: 6px 0 0 0;
+  font-size: 12px;
+  color: var(--text-color-secondary);
+}
+
+.tag-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+
+  .tag-btn {
+    padding: 6px 12px;
+    border: 1px solid var(--surface-border);
+    border-radius: 16px;
+    background: var(--surface-ground);
+    color: var(--text-color-secondary);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+      border-color: var(--primary-color);
+      color: var(--primary-color);
+    }
+
+    &.active {
+      background: var(--primary-color);
+      border-color: var(--primary-color);
+      color: white;
+    }
+  }
+}
+
+.filter-actions {
+  margin-bottom: 16px;
+
+  .btn-clear {
+    padding: 6px 12px;
+    border: none;
+    background: transparent;
+    color: var(--text-color-secondary);
+    font-size: 13px;
+    cursor: pointer;
+
+    &:hover {
+      color: var(--primary-color);
+    }
+  }
+}
+
+// 数据管理入口按钮
+.data-manage-btn {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px;
+  background: var(--surface-ground);
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: rgba(79, 195, 247, 0.1);
+
+    .arrow {
+      transform: translateX(4px);
+      color: var(--primary-color);
+    }
+  }
+
+  .btn-icon {
+    width: 44px;
+    height: 44px;
+    background: linear-gradient(135deg, #4FC3F7 0%, #29b6f6 100%);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    i {
+      font-size: 20px;
+      color: white;
+    }
+  }
+
+  .btn-text {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+
+    .btn-title {
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--text-color);
+    }
+
+    .btn-desc {
+      font-size: 13px;
+      color: var(--text-color-secondary);
+      margin-top: 2px;
+    }
+  }
+
+  .arrow {
+    font-size: 16px;
+    color: var(--text-color-secondary);
+    transition: all 0.2s ease;
+  }
 }
 </style>

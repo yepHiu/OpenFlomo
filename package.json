@@ -1,13 +1,15 @@
 {
   "name": "openflomo",
   "private": true,
-  "version": "1.1.0",
+  "version": "2026.03.06-259692-release",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc --noEmit && vite build",
     "preview": "vite preview",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "tauri:dev": "node scripts/update-version.js && tauri dev",
+    "tauri:build": "node scripts/update-version.js --release && tauri build"
   },
   "dependencies": {
     "@primeuix/themes": "^2.0.3",
