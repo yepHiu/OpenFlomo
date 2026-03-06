@@ -27,7 +27,7 @@ export function parseBold(text: string): (string | VNode)[] {
 /**
  * 解析一行（加粗）
  */
-export function parseLine(line: string): VNode[] {
+export function parseLine(line: string): (string | VNode)[] {
   return parseBold(line);
 }
 
