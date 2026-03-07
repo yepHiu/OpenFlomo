@@ -4,14 +4,26 @@ import { useSettingsStore } from "../stores/settingsStore";
 import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import DataModal from "../components/DataModal.vue";
+import Dropdown from "primevue/dropdown";
 
 const settingsStore = useSettingsStore();
 const router = useRouter();
 const { t } = useI18n();
 const showDataModal = ref(false);
 
+// 语言选项
+const languages = ref([
+  { value: 'zh-CN', label: '中文' },
+  { value: 'en', label: 'English' },
+  { value: 'ja', label: '日本語' }
+]);
+
 function goBack() {
   router.push("/");
+}
+
+function handleLanguageChange(value: string) {
+  settingsStore.setAppLocale(value as 'zh-CN' | 'en' | 'ja');
 }
 </script>
 
@@ -46,9 +58,14 @@ function goBack() {
             <i class="pi pi-globe"></i>
             <span>{{ t('settings.language') }}</span>
           </div>
-          <button class="lang-btn" @click="settingsStore.toggleLocale()">
-            {{ settingsStore.locale === 'zh-CN' ? '中文' : 'English' }}
-          </button>
+          <Dropdown
+            :modelValue="settingsStore.locale"
+            @update:modelValue="handleLanguageChange"
+            :options="languages"
+            optionLabel="label"
+            optionValue="value"
+            class="lang-dropdown"
+          />
         </div>
       </div>
 
@@ -247,21 +264,9 @@ function goBack() {
   }
 }
 
-// 语言切换按钮
-.lang-btn {
-  padding: 6px 16px;
-  border: 1px solid var(--surface-border);
-  border-radius: var(--border-radius-sm);
-  background: var(--surface-ground);
-  color: var(--text-color);
-  font-size: 14px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-
-  &:hover {
-    background: var(--surface-card);
-    border-color: var(--primary-color);
-  }
+// 语言选择器
+.lang-dropdown {
+  width: 140px;
 }
 
 // 数据管理按钮

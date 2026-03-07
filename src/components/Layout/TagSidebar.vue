@@ -29,12 +29,11 @@ function goToSettings() {
 }
 
 function goToTrash() {
-  memoStore.setSelectedTag(null); // 清除标签选中状态
-  memoStore.setSearch(""); // 清除搜索
+  memoStore.setSelectedTag(null);
+  memoStore.setSearch("");
   memoStore.toggleTrashMode();
 }
 
-// 刷新数据
 function refreshData() {
   memoStore.fetchMemos();
 }
@@ -43,7 +42,7 @@ function refreshData() {
 <template>
   <div class="tag-sidebar">
     <div class="sidebar-header">
-      <h2>OpenFlomo</h2>
+      <h2>{{ t('app.title') }}</h2>
       <div class="header-actions">
         <div
           class="icon-btn"
@@ -51,8 +50,8 @@ function refreshData() {
           tabindex="0"
           @keydown="(e) => e.key === 'Enter' && refreshData()"
           role="button"
-          aria-label="刷新"
-          title="刷新数据"
+          :aria-label="t('sidebar.refresh')"
+          :title="t('sidebar.refreshData')"
         >
           <i class="pi pi-refresh"></i>
         </div>
@@ -62,7 +61,7 @@ function refreshData() {
           tabindex="0"
           @keydown="(e) => e.key === 'Enter' && goToSettings()"
           role="button"
-          aria-label="设置"
+          :aria-label="t('sidebar.settings')"
         >
           <i class="pi pi-cog"></i>
         </div>
@@ -83,7 +82,6 @@ function refreshData() {
       </div>
     </div>
 
-    <!-- 统计 -->
     <div class="sidebar-stats">
       <div class="stat-item">
         <span class="stat-value">{{ memoStore.totalCountWithTrash }}</span>
@@ -95,7 +93,6 @@ function refreshData() {
       </div>
     </div>
 
-    <!-- 回收站入口 -->
     <div class="sidebar-section">
       <div
         class="menu-item trash-item"
@@ -110,7 +107,6 @@ function refreshData() {
       </div>
     </div>
 
-    <!-- 热力图 -->
     <Heatmap />
 
     <div class="tag-header">
@@ -216,7 +212,6 @@ function refreshData() {
     color: var(--text-color-secondary);
     margin: 0 0 10px 8px;
   }
-
 }
 
 .tag-header {
@@ -239,16 +234,14 @@ function refreshData() {
   min-height: 0;
   padding: 0 12px;
   box-sizing: border-box;
-
-  // 隐藏滚动条
   scrollbar-width: none;
   -ms-overflow-style: none;
+
   &::-webkit-scrollbar {
     display: none;
   }
 }
 
-// 共用列表项样式
 .sidebar-item {
   display: flex;
   align-items: center;

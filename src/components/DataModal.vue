@@ -1,15 +1,20 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from "vue";
 import { useMemoStore } from "../stores/memoStore";
+import { useI18n } from "vue-i18n";
 import { exportMemos, importMemos, type ExportData, type ExportOptions } from "../services/database";
 import { save, open } from "@tauri-apps/plugin-dialog";
 import { writeTextFile } from "@tauri-apps/plugin-fs";
+import { useAppToast } from "../composables/useToast";
+import DatePicker from "primevue/datepicker";
 
 const emit = defineEmits<{
   close: []
 }>();
 
 const memoStore = useMemoStore();
+const { t } = useI18n();
+const { showSuccess, showError } = useAppToast();
 
 const isExporting = ref(false);
 const isImporting = ref(false);
@@ -17,8 +22,8 @@ const importFileName = ref("");
 const importPreview = ref<ExportData | null>(null);
 
 const exportFormat = ref<"json" | "markdown">("json");
-const startDate = ref("");
-const endDate = ref("");
+const startDate = ref<Date | null>(null);
+const endDate = ref<Date | null>(null);
 const selectedTags = ref<string[]>([]);
 
 const availableTags = computed(() => memoStore.allTags);
@@ -29,26 +34,38 @@ const stats = computed(() => ({
   today: memoStore.todayCount,
 }));
 
+// 格式化日期为 YYYY-MM-DD
+function formatDateString(date: Date | null): string {
+  if (!date) return '';
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 const exportPreview = computed(() => {
   const conditions: string[] = [];
 
-  if (startDate.value && endDate.value) {
-    conditions.push(`${startDate.value} 至 ${endDate.value}`);
-  } else if (startDate.value) {
-    conditions.push(`从 ${startDate.value} 开始`);
-  } else if (endDate.value) {
-    conditions.push(`截至 ${endDate.value}`);
+  const startStr = formatDateString(startDate.value);
+  const endStr = formatDateString(endDate.value);
+
+  if (startStr && endStr) {
+    conditions.push(`${startStr} ${t('data.to')} ${endStr}`);
+  } else if (startStr) {
+    conditions.push(`${startStr}`);
+  } else if (endStr) {
+    conditions.push(`${endStr}`);
   }
 
   if (selectedTags.value.length > 0) {
-    conditions.push(`标签：${selectedTags.value.map(t => '#' + t).join(' ')}`);
+    conditions.push(`#${selectedTags.value.join(' #')}`);
   }
 
   if (conditions.length === 0) {
-    return `将导出全部 ${stats.value.total} 条记录`;
+    return t('data.exportPreview', { count: stats.value.total });
   }
 
-  return `将导出筛选后的记录`;
+  return t('data.exportPreviewFiltered');
 });
 
 function toggleTag(tag: string) {
@@ -61,8 +78,8 @@ function toggleTag(tag: string) {
 }
 
 function clearFilters() {
-  startDate.value = "";
-  endDate.value = "";
+  startDate.value = null;
+  endDate.value = null;
   selectedTags.value = [];
 }
 
@@ -95,8 +112,8 @@ async function handleExport() {
   try {
     const options: ExportOptions = {
       format: exportFormat.value,
-      startDate: startDate.value || undefined,
-      endDate: endDate.value || undefined,
+      startDate: formatDateString(startDate.value) || undefined,
+      endDate: formatDateString(endDate.value) || undefined,
       tags: selectedTags.value.length > 0 ? selectedTags.value : undefined,
     };
 
@@ -123,11 +140,11 @@ async function handleExport() {
         count = matches ? matches.length : 0;
       }
 
-      alert(`导出成功，共 ${count} 条记录`);
+      showSuccess(t('data.exportSuccess', { count }));
     }
   } catch (e) {
     console.error("Export failed:", e);
-    alert("导出失败: " + e);
+    showError(t('data.exportFailed', { error: String(e) }));
   } finally {
     isExporting.value = false;
   }
@@ -149,14 +166,14 @@ async function handleSelectFile() {
     const data: ExportData = JSON.parse(text);
 
     if (!data.version || !data.memos) {
-      throw new Error("无效的文件格式");
+      throw new Error(t('data.invalidFile'));
     }
 
-    importFileName.value = (filePath as string).split(/[/\\]/).pop() || "未知文件";
+    importFileName.value = (filePath as string).split(/[/\\]/).pop() || "Unknown";
     importPreview.value = data;
   } catch (e) {
     console.error("Import preview failed:", e);
-    alert("读取文件失败: " + e);
+    showError(t('data.importFailed', { error: String(e) }));
     importPreview.value = null;
     importFileName.value = "";
   }
@@ -168,7 +185,7 @@ async function handleImport() {
 
   try {
     const count = await importMemos(importPreview.value);
-    alert(`导入成功，共 ${count} 条记录`);
+    showSuccess(t('data.importSuccessCount', { count }));
 
     await memoStore.fetchMemos();
 
@@ -176,7 +193,7 @@ async function handleImport() {
     importFileName.value = "";
   } catch (e) {
     console.error("Import failed:", e);
-    alert("导入失败: " + e);
+    showError(t('data.importFailed', { error: String(e) }));
   } finally {
     isImporting.value = false;
   }
@@ -192,7 +209,7 @@ function cancelImport() {
   <div class="modal-backdrop" @click="handleBackdropClick">
     <div class="modal-content">
       <div class="modal-header">
-        <h2>数据管理</h2>
+        <h2>{{ t('data.title') }}</h2>
         <button class="close-btn" @click="$emit('close')">
           <i class="pi pi-times"></i>
         </button>
@@ -205,7 +222,7 @@ function cancelImport() {
           </div>
           <div class="stat-info">
             <span class="stat-value">{{ stats.total }}</span>
-            <span class="stat-label">总记录数</span>
+            <span class="stat-label">{{ t('data.totalRecords') }}</span>
           </div>
         </div>
         <div class="stat-card">
@@ -214,7 +231,7 @@ function cancelImport() {
           </div>
           <div class="stat-info">
             <span class="stat-value">{{ stats.tags }}</span>
-            <span class="stat-label">标签数</span>
+            <span class="stat-label">{{ t('data.tagCount') }}</span>
           </div>
         </div>
         <div class="stat-card">
@@ -223,7 +240,7 @@ function cancelImport() {
           </div>
           <div class="stat-info">
             <span class="stat-value">{{ stats.today }}</span>
-            <span class="stat-label">今日新增</span>
+            <span class="stat-label">{{ t('data.todayNew') }}</span>
           </div>
         </div>
       </div>
@@ -232,17 +249,17 @@ function cancelImport() {
         <div class="data-card export-card">
           <div class="card-header">
             <i class="pi pi-download"></i>
-            <h3>导出数据</h3>
+            <h3>{{ t('data.export') }}</h3>
           </div>
 
           <div class="format-section">
-            <label class="section-label">选择格式</label>
+            <label class="section-label">{{ t('data.selectFormat') }}</label>
             <div class="format-cards">
               <div class="format-card" :class="{ active: exportFormat === 'json' }" @click="exportFormat = 'json'">
                 <span class="format-icon">📦</span>
                 <div class="format-info">
                   <span class="format-name">JSON</span>
-                  <span class="format-desc">备份和迁移</span>
+                  <span class="format-desc">{{ t('data.exportJson').replace('导出为 ', '') }}</span>
                 </div>
                 <div class="format-check" v-if="exportFormat === 'json'">
                   <i class="pi pi-check"></i>
@@ -252,7 +269,7 @@ function cancelImport() {
                 <span class="format-icon">📝</span>
                 <div class="format-info">
                   <span class="format-name">Markdown</span>
-                  <span class="format-desc">阅读和分享</span>
+                  <span class="format-desc">{{ t('data.exportMarkdown').replace('导出为 ', '') }}</span>
                 </div>
                 <div class="format-check" v-if="exportFormat === 'markdown'">
                   <i class="pi pi-check"></i>
@@ -262,19 +279,19 @@ function cancelImport() {
           </div>
 
           <div class="filter-section">
-            <label class="section-label">筛选条件（可选）</label>
+            <label class="section-label">{{ t('data.filterConditions') }}</label>
 
             <div class="filter-row">
-              <span class="filter-label">日期</span>
+              <span class="filter-label">{{ t('data.date') }}</span>
               <div class="date-range">
-                <input type="date" v-model="startDate" />
-                <span>至</span>
-                <input type="date" v-model="endDate" />
+                <DatePicker v-model="startDate" :placeholder="t('data.startDate')" dateFormat="yy-mm-dd" showIcon iconDisplay="input" class="date-picker" />
+                <span>{{ t('data.to') }}</span>
+                <DatePicker v-model="endDate" :placeholder="t('data.endDate')" dateFormat="yy-mm-dd" showIcon iconDisplay="input" class="date-picker" />
               </div>
             </div>
 
             <div class="filter-row" v-if="availableTags.length > 0">
-              <span class="filter-label">标签</span>
+              <span class="filter-label">{{ t('sidebar.tags') }}</span>
               <div class="tag-filters">
                 <button v-for="tag in availableTags" :key="tag.name" class="tag-btn" :class="{ active: selectedTags.includes(tag.name) }" @click="toggleTag(tag.name)">
                   #{{ tag.name }}
@@ -283,7 +300,7 @@ function cancelImport() {
             </div>
 
             <button class="btn-clear" @click="clearFilters" v-if="startDate || endDate || selectedTags.length > 0">
-              清除筛选
+              {{ t('data.clearFilter') }}
             </button>
           </div>
 
@@ -294,14 +311,14 @@ function cancelImport() {
 
           <button class="btn-export" @click="handleExport" :disabled="isExporting">
             <i class="pi pi-download"></i>
-            <span>{{ isExporting ? "导出中..." : "开始导出" }}</span>
+            <span>{{ isExporting ? t('data.exporting') : t('data.startExport') }}</span>
           </button>
         </div>
 
         <div class="data-card import-card">
           <div class="card-header">
             <i class="pi pi-upload"></i>
-            <h3>导入数据</h3>
+            <h3>{{ t('data.import') }}</h3>
           </div>
 
           <div v-if="!importPreview" class="upload-section">
@@ -310,8 +327,8 @@ function cancelImport() {
                 <i class="pi pi-file-upload"></i>
               </div>
               <div class="upload-text">
-                <span class="upload-title">点击选择文件</span>
-                <span class="upload-hint">支持 .json 格式</span>
+                <span class="upload-title">{{ t('data.clickSelectFile') }}</span>
+                <span class="upload-hint">{{ t('data.supportJson') }}</span>
               </div>
             </div>
           </div>
@@ -328,7 +345,7 @@ function cancelImport() {
             <div class="preview-content">
               <div class="preview-stat">
                 <span class="stat-num">{{ importPreview.memos.length }}</span>
-                <span class="stat-text">条记录</span>
+                <span class="stat-text">{{ t('data.records') }}</span>
               </div>
 
               <div class="preview-list">
@@ -339,14 +356,14 @@ function cancelImport() {
                   </span>
                 </div>
                 <div v-if="importPreview.memos.length > 3" class="preview-more">
-                  还有 {{ importPreview.memos.length - 3 }} 条...
+                  + {{ importPreview.memos.length - 3 }} {{ t('data.records') }}
                 </div>
               </div>
             </div>
 
             <button class="btn-import" @click="handleImport" :disabled="isImporting">
               <i class="pi pi-upload"></i>
-              <span>{{ isImporting ? "导入中..." : "确认导入" }}</span>
+              <span>{{ isImporting ? t('data.importing') : t('data.confirmImport') }}</span>
             </button>
           </div>
         </div>
@@ -496,7 +513,6 @@ function cancelImport() {
   overflow-y: auto;
   padding: 20px 24px;
 
-  // 隐藏滚动条
   scrollbar-width: none;
   -ms-overflow-style: none;
   &::-webkit-scrollbar {
@@ -621,22 +637,12 @@ function cancelImport() {
 .date-range {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
+  flex-wrap: wrap;
 
-  input[type="date"] {
+  .date-picker {
     flex: 1;
-    padding: 6px 10px;
-    border: 1px solid var(--surface-border);
-    border-radius: 6px;
-    font-size: 13px;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    background: var(--surface-ground);
-    color: var(--text-color);
-
-    &:focus {
-      outline: none;
-      border-color: var(--primary-color);
-    }
+    min-width: 140px;
   }
 
   span {

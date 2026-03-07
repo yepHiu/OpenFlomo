@@ -11,17 +11,26 @@
     "tags": "Tags",
     "noTags": "No tags yet",
     "trash": "Trash",
-    "trashEmpty": "Trash is empty"
+    "trashEmpty": "Trash is empty",
+    "refresh": "Refresh",
+    "refreshData": "Refresh data",
+    "settings": "Settings"
   },
   "memo": {
-    "placeholder": "Write your thoughts...",
+    "placeholder": "Write your thoughts... (#tags, - lists, **bold** supported)",
     "noRecords": "No records yet, start writing your first thought!",
     "noSearchResults": "No matching results found",
     "noTagRecords": "No records with tag #{tag}",
     "edit": "Edit",
     "delete": "Delete",
     "confirmDelete": "Move this record to trash?",
-    "moveToTrash": "Move to Trash"
+    "moveToTrash": "Move to Trash",
+    "send": "Send",
+    "submitFailed": "Submit failed: {error}",
+    "editContent": "Edit content...",
+    "editTags": "Tags (comma separated)",
+    "giveUpEdit": "Cancel",
+    "saveEdit": "Save"
   },
   "trash": {
     "title": "Trash",
@@ -32,17 +41,21 @@
     "cleanTrash": "Empty Trash",
     "confirmCleanTrash": "Permanently delete {count} records? This action cannot be undone!",
     "remainingDays": "{days} days remaining",
-    "deletedAt": "Deleted at {time}"
+    "deletedAt": "Deleted at {time}",
+    "deletedInfo": "Deleted at {time} · {days} days left"
   },
   "batch": {
     "selectAll": "Select All",
+    "batchManage": "Batch Manage",
     "clearSelection": "Clear",
     "exportSelected": "Export Selected",
     "deleteSelected": "Delete Selected",
     "restoreSelected": "Restore Selected",
     "permanentDeleteSelected": "Delete Permanently",
     "cancel": "Cancel",
-    "selected": "{count} selected"
+    "selected": "{count} selected",
+    "confirmBatchDelete": "Move {count} selected records to trash?",
+    "confirmBatchPermanentDelete": "Permanently delete {count} selected records? This action cannot be undone!"
   },
   "settings": {
     "appearance": "Appearance",
@@ -64,10 +77,48 @@
     "exportMarkdown": "Export as Markdown",
     "importFile": "Select File",
     "importSuccess": "Successfully imported {count} records",
-    "close": "Close"
+    "close": "Close",
+    "totalRecords": "Total Records",
+    "tagCount": "Tags",
+    "todayNew": "Today",
+    "selectFormat": "Select Format",
+    "filterConditions": "Filter Conditions (Optional)",
+    "date": "Date",
+    "startDate": "Start date",
+    "endDate": "End date",
+    "to": "to",
+    "clearFilter": "Clear Filters",
+    "exportPreview": "Will export all {count} records",
+    "exportPreviewFiltered": "Will export filtered records",
+    "exporting": "Exporting...",
+    "startExport": "Start Export",
+    "exportSuccess": "Export successful, {count} records",
+    "exportFailed": "Export failed: {error}",
+    "clickSelectFile": "Click to select file",
+    "supportJson": "Supports .json format",
+    "confirmImport": "Confirm Import",
+    "importing": "Importing...",
+    "importSuccessCount": "Successfully imported {count} records",
+    "importFailed": "Import failed: {error}",
+    "invalidFile": "Invalid file format",
+    "invalidImportData": "Invalid import data format",
+    "records": "records",
+    "fileName": "File",
+    "cancelImport": "Cancel"
   },
   "search": {
     "placeholder": "Search records...",
     "clear": "Clear"
+  },
+  "heatmap": {
+    "title": "Heatmap",
+    "records": "{count} records",
+    "less": "Less",
+    "more": "More"
+  },
+  "home": {
+    "trashTitle": "Trash",
+    "allRecords": "All Records",
+    "searchPlaceholder": "Search..."
   }
 }

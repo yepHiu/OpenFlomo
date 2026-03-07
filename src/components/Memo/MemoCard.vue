@@ -2,6 +2,7 @@
 import { ref, computed, nextTick } from "vue";
 import { useMemoStore } from "../../stores/memoStore";
 import { parseMarkdown } from "../../utils/markdown";
+import { useI18n } from "vue-i18n";
 import type { Memo } from "../../services/database";
 
 const props = defineProps<{
@@ -10,6 +11,7 @@ const props = defineProps<{
 }>();
 
 const memoStore = useMemoStore();
+const { t } = useI18n();
 const isEditing = ref(false);
 const editContent = ref("");
 const editTags = ref("");
@@ -120,7 +122,7 @@ async function handleRestore() {
 
 // 彻底删除 memo
 async function handlePermanentDelete() {
-  if (!confirm("确定要彻底删除这条记录吗？此操作不可恢复！")) return;
+  if (!confirm(t('trash.confirmPermanentDelete'))) return;
   await memoStore.permanentDelete(props.memo.id);
 }
 </script>
@@ -145,25 +147,25 @@ async function handlePermanentDelete() {
           <!-- 回收站模式显示删除时间和剩余天数 -->
           <span v-if="props.isTrashMode" class="deleted-info">
             <i class="pi pi-clock"></i>
-            删除于 {{ deletedDate }} · 剩余 {{ remainingDays }} 天
+            {{ t('trash.deletedInfo', { time: deletedDate, days: remainingDays }) }}
           </span>
         </div>
         <div v-if="!memoStore.isBatchMode" class="actions" @dblclick.stop>
           <!-- 回收站模式下的操作 -->
           <template v-if="props.isTrashMode">
-            <button class="action-btn restore" title="恢复" @click.stop="handleRestore">
+            <button class="action-btn restore" :title="t('trash.restore')" @click.stop="handleRestore">
               <i class="pi pi-replay"></i>
             </button>
-            <button class="action-btn delete" title="彻底删除" @click.stop="handlePermanentDelete">
+            <button class="action-btn delete" :title="t('trash.permanentDelete')" @click.stop="handlePermanentDelete">
               <i class="pi pi-times-circle"></i>
             </button>
           </template>
           <!-- 普通模式下的操作 -->
           <template v-else>
-            <button class="action-btn" title="编辑" @click.stop="startEdit">
+            <button class="action-btn" :title="t('memo.edit')" @click.stop="startEdit">
               <i class="pi pi-pencil"></i>
             </button>
-            <button class="action-btn delete" title="删除" @click.stop="confirmDelete">
+            <button class="action-btn delete" :title="t('memo.delete')" @click.stop="confirmDelete">
               <i class="pi pi-trash"></i>
             </button>
           </template>
@@ -199,19 +201,19 @@ async function handlePermanentDelete() {
           ref="contentInputRef"
           v-model="editContent"
           class="edit-textarea"
-          placeholder="编辑内容..."
+          :placeholder="t('memo.editContent')"
           @input="autoResize"
         ></textarea>
 
         <input
           v-model="editTags"
           class="edit-tags"
-          placeholder="标签（用逗号分隔）"
+          :placeholder="t('memo.editTags')"
         />
 
         <div class="edit-actions">
-          <button class="btn-giveup" @click.stop="cancelEdit">放弃编辑</button>
-          <button class="btn-save-edit" @click.stop="saveEdit">保存编辑</button>
+          <button class="btn-giveup" @click.stop="cancelEdit">{{ t('memo.giveUpEdit') }}</button>
+          <button class="btn-save-edit" @click.stop="saveEdit">{{ t('memo.saveEdit') }}</button>
         </div>
       </div>
     </template>
@@ -220,11 +222,11 @@ async function handlePermanentDelete() {
     <Teleport to="body">
       <div v-if="showConfirmDelete" class="confirm-overlay" @click="showConfirmDelete = false">
         <div class="confirm-dialog" @click.stop>
-          <h3>确认删除</h3>
-          <p>确定要将这条记录移入回收站吗？</p>
+          <h3>{{ t('memo.confirmDelete').split('？')[0] }}</h3>
+          <p>{{ t('memo.confirmDelete') }}</p>
           <div class="confirm-actions">
-            <button class="btn-cancel" @click="showConfirmDelete = false">取消</button>
-            <button class="btn-delete" @click="handleDelete">删除到回收站</button>
+            <button class="btn-cancel" @click="showConfirmDelete = false">{{ t('batch.cancel') }}</button>
+            <button class="btn-delete" @click="handleDelete">{{ t('memo.moveToTrash') }}</button>
           </div>
         </div>
       </div>

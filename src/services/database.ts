@@ -32,8 +32,7 @@ async function getDb(): Promise<Database> {
       console.log("[DB] Database loaded successfully");
     } catch (e) {
       console.error("[DB] Failed to load database:", e);
-      alert("数据库加载失败: " + e);
-      throw e;
+      throw new Error("数据库加载失败: " + e);
     }
   }
   return db;
@@ -82,8 +81,7 @@ export async function getAllMemos(): Promise<Memo[]> {
     return result;
   } catch (e) {
     console.error("[DB] Failed to get memos:", e);
-    alert("获取记录失败: " + e);
-    throw e;
+    throw new Error("获取记录失败: " + e);
   }
 }
 
@@ -231,8 +229,7 @@ export async function createMemo(content: string, tags: string): Promise<Memo> {
     return newMemo;
   } catch (e) {
     console.error("[DB] Failed to create memo:", e);
-    alert("创建记录失败: " + e);
-    throw e;
+    throw new Error("创建记录失败: " + e);
   }
 }
 
@@ -246,7 +243,7 @@ export async function updateMemo(
   const now = new Date().toISOString();
 
   await database.execute(
-    "UPDATE memos SET content = ?, tags = ?, updated_at = ? WHERE id = ?",
+    "UPDATE memos SET content = ?, tags = ?, updated_at =? WHERE id = ?",
     [content, tags, now, id]
   );
 }

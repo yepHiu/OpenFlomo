@@ -1,13 +1,17 @@
 import { createI18n } from 'vue-i18n'
 import zhCN from '../locales/zh-CN.json'
 import en from '../locales/en.json'
+import ja from '../locales/ja.json'
 
-type Locale = 'zh-CN' | 'en'
+type Locale = 'zh-CN' | 'en' | 'ja'
 
 // 获取保存的语言设置，没有则使用简体中文
 function getSavedLocale(): Locale {
   const saved = localStorage.getItem('locale')
-  return (saved === 'en' ? 'en' : 'zh-CN') as Locale
+  if (saved === 'en' || saved === 'ja') {
+    return saved as Locale
+  }
+  return 'zh-CN'
 }
 
 export const i18n = createI18n({
@@ -16,7 +20,8 @@ export const i18n = createI18n({
   fallbackLocale: 'zh-CN',
   messages: {
     'zh-CN': zhCN,
-    'en': en
+    'en': en,
+    'ja': ja
   }
 })
 

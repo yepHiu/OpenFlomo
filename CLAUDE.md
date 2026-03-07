@@ -13,6 +13,8 @@ OpenFlomo is an open-source alternative to Flomo (浮墨笔记), a lightweight n
 - **UI Library**: PrimeVue with Aura theme
 - **State Management**: Pinia
 - **Database**: SQLite (via tauri-plugin-sql)
+- **Styling**: SCSS
+- **i18n**: vue-i18n
 
 ## Commands
 
@@ -41,8 +43,23 @@ npm run build
 - Database service (`src/services/database.ts`) uses singleton pattern with lazy loading
 - Uses `@tauri-apps/plugin-sql` to connect to SQLite
 - Database file: `openflomo.db` (prod) or `openflomo_dev.db` (dev) in app data directory
-- Memo schema: `id`, `content`, `tags` (comma-separated), `created_at`, `updated_at`, `deleted_at` (soft delete)
-- All database operations are async and return typed `Memo` objects
+
+**Memo Schema:**
+```typescript
+interface Memo {
+  id: number;           // Primary key
+  content: string;      // Content
+  tags: string;         // Tags (comma-separated)
+  created_at: string;   // Created time (ISO)
+  updated_at: string;   // Updated time (ISO)
+  deleted_at?: string;  // Deletion time (soft delete)
+}
+```
+
+**Database locations:**
+- macOS: `~/Library/Application Support/com.openflomo.app/`
+- Windows: `%APPDATA%\com.openflomo.app\`
+- Linux: `~/.local/share/com.openflomo.app/`
 
 ### State Management
 
@@ -53,48 +70,75 @@ npm run build
   - Trash/recycle bin management
   - Statistics (total, today, heatmap data)
 
+- Settings store (`src/stores/settingsStore.ts`) manages:
+  - `isDarkMode` - Dark mode toggle
+  - `locale` - Current language
+  - `version` - App version
+  - `isMac` - Platform detection
+
 ### Multi-language
 
 - i18n support via `vue-i18n`
-- Language files in `src/locales/` (en.json, zh-CN.json)
+- Language files in `src/locales/` (en.json, zh-CN.json, ja.json)
 - Configured in `src/i18n/index.ts`
+- Supported locales: `zh-CN` (简体中文), `en` (English), `ja` (日本語)
+
+### Tauri Plugins
+
+- `tauri-plugin-sql` - SQLite database
+- `tauri-plugin-dialog` - Native file dialogs
+- `tauri-plugin-fs` - File system access
+- `tauri-plugin-opener` - Open external links
 
 ## File Structure
 
 ```
-src/
-├── main.ts                 # Vue app entry, config PrimeVue/Pinia/Router/i18n
-├── App.vue                 # Root component
-├── router/index.ts         # Vue Router config (home, settings)
-├── styles/main.scss        # Bright theme styles
-├── services/database.ts    # SQLite database service
-├── stores/
-│   ├── memoStore.ts        # Pinia memo state management
-│   └── settingsStore.ts   # Settings state
-├── i18n/index.ts           # Internationalization config
-├── locales/                # Language files
-│   ├── en.json
-│   └── zh-CN.json
-├── views/
-│   ├── HomeView.vue        # Main home view
-│   └── SettingsView.vue   # Settings view
-└── components/
-    ├── Layout/
-    │   ├── TagSidebar.vue  # Left sidebar with tags
-    │   └── Heatmap.vue    # Activity heatmap
-    ├── Memo/
-    │   ├── MemoInput.vue       # Input component
-    │   ├── MemoList.vue        # List component
-    │   ├── MemoCard.vue        # Card component
-    │   └── MemoEditDialog.vue  # Edit dialog
-    └── DataModal.vue      # Import/export modal
-
-src-tauri/
-├── src/
-│   ├── main.rs            # Rust entry
-│   └── lib.rs             # Tauri plugins setup
-├── Cargo.toml             # Rust dependencies
-└── tauri.conf.json        # Tauri configuration
+OpenFlomo/
+├── public/                  # Static assets
+│   ├── version.json         # Version config
+│   └── *.svg               # Icons
+├── src/                    # Frontend source
+│   ├── main.ts             # Vue app entry
+│   ├── App.vue             # Root component
+│   ├── router/index.ts     # Vue Router (/, /settings)
+│   ├── styles/main.scss    # Global styles
+│   ├── services/database.ts # SQLite service
+│   ├── composables/useToast.ts # Toast wrapper
+│   ├── utils/markdown.ts   # Markdown parser
+│   ├── stores/
+│   │   ├── memoStore.ts    # Memo state
+│   │   └── settingsStore.ts # Settings state
+│   ├── i18n/index.ts       # i18n config
+│   ├── locales/            # Language files
+│   │   ├── en.json
+│   │   ├── zh-CN.json
+│   │   └── ja.json
+│   ├── views/
+│   │   ├── HomeView.vue    # Main view
+│   │   └── SettingsView.vue # Settings page
+│   └── components/
+│       ├── Layout/
+│       │   ├── TagSidebar.vue # Sidebar with tags
+│       │   └── Heatmap.vue    # Activity heatmap
+│       ├── Memo/
+│       │   ├── MemoInput.vue      # Input component
+│       │   ├── MemoList.vue       # List component
+│       │   ├── MemoCard.vue       # Card component
+│       │   └── MemoEditDialog.vue # Edit dialog
+│       └── DataModal.vue     # Import/export modal
+├── src-tauri/              # Tauri backend (Rust)
+│   ├── src/
+│   │   ├── main.rs        # Rust entry
+│   │   └── lib.rs         # Plugins setup
+│   ├── Cargo.toml         # Rust dependencies
+│   ├── tauri.conf.json    # Tauri config
+│   └── capabilities/      # Permission config
+├── docs/                   # Documentation
+│   ├── ProjectStructure.md
+│   ├── CrossPlatform.md
+│   ├── Optimization.md
+│   └── PRD.md
+└── package.json
 ```
 
 ## Implemented Features
@@ -108,12 +152,13 @@ src-tauri/
 7. **Statistics** - Total count, today's count, and heatmap display
 8. **Trash/Recycle bin** - Soft delete with 30-day expiration
 9. **Export** - Export to JSON or Markdown format
-10. **Multi-language** - English and Simplified Chinese
+10. **Multi-language** - English, Simplified Chinese, Japanese
+11. **Batch operations** - Batch select, delete, restore, export
 
 ## Tauri Configuration
 
-- Plugins: `tauri-plugin-sql` (SQLite), `tauri-plugin-dialog`, `tauri-plugin-fs`, `tauri-plugin-opener`
 - Window: 1000x700, minimum 800x600, centered on launch
+- App identifier: `com.openflomo.app`
 - Database migrations handled in frontend `database.ts` init
 
 ## Development Guidelines
@@ -123,3 +168,6 @@ src-tauri/
 - Keep UI/UX lightweight - this is a "light" product
 - Data must be exportable/backupable
 - Tag syntax: Use `#tag` in content (e.g., `#工作 #想法`)
+- Use PrimeVue components for new UI elements (Dropdown, Toast, DatePicker)
+- All user-facing strings must use i18n keys (no hardcoded text)
+- Replace browser `alert()` with Toast notifications

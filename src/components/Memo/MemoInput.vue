@@ -2,15 +2,26 @@
 import { ref, computed, nextTick } from "vue";
 import { useMemoStore } from "../../stores/memoStore";
 import { useI18n } from "vue-i18n";
+import { useAppToast } from "../../composables/useToast";
 
 const memoStore = useMemoStore();
 const { t } = useI18n();
+const { showError } = useAppToast();
+
 const rawInput = ref("");
 const isSubmitting = ref(false);
 const textareaRef = ref<HTMLTextAreaElement | null>(null);
 
 // 列表模式状态
 const isListMode = ref(false);
+
+// 检测操作系统
+const isMac = computed(() => {
+  return typeof navigator !== 'undefined' && navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+});
+
+// 快捷键提示
+const shortcutHint = computed(() => isMac.value ? 'Cmd + Enter' : 'Ctrl + Enter');
 
 // 自动调整高度
 function autoResize() {
@@ -134,7 +145,7 @@ async function handleSubmit() {
     rawInput.value = "";
   } catch (e) {
     console.error("Failed to submit:", e);
-    alert("提交失败: " + e);
+    showError(t('memo.submitFailed', { error: String(e) }));
   } finally {
     isSubmitting.value = false;
   }
@@ -159,14 +170,14 @@ async function handleSubmit() {
       </div>
 
       <div class="actions">
-        <span class="hint">Ctrl + Enter 发送</span>
+        <span class="hint">{{ shortcutHint }} {{ t('memo.send') }}</span>
         <button
           class="btn-primary"
           :disabled="!extractedContent || isSubmitting"
           @click="handleSubmit"
         >
           <i class="pi pi-send"></i>
-          发送
+          {{ t('memo.send') }}
         </button>
       </div>
     </div>

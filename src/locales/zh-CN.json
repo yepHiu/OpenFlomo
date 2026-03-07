@@ -11,7 +11,10 @@
     "tags": "标签",
     "noTags": "暂无标签",
     "trash": "回收站",
-    "trashEmpty": "回收站是空的"
+    "trashEmpty": "回收站是空的",
+    "refresh": "刷新",
+    "refreshData": "刷新数据",
+    "settings": "设置"
   },
   "memo": {
     "placeholder": "记录今天的学习、思考或灵感... (支持 #标签、- 列表、**加粗**)",
@@ -23,7 +26,13 @@
     "edit": "编辑",
     "delete": "删除",
     "confirmDelete": "确定要将这条记录移入回收站吗？",
-    "moveToTrash": "删除到回收站"
+    "moveToTrash": "删除到回收站",
+    "send": "发送",
+    "submitFailed": "提交失败: {error}",
+    "editContent": "编辑内容...",
+    "editTags": "标签（用逗号分隔）",
+    "giveUpEdit": "放弃编辑",
+    "saveEdit": "保存编辑"
   },
   "trash": {
     "title": "回收站",
@@ -34,17 +43,21 @@
     "cleanTrash": "清空回收站",
     "confirmCleanTrash": "确定要清空回收站吗？将永久删除 {count} 条记录，此操作不可恢复！",
     "remainingDays": "剩余 {days} 天",
-    "deletedAt": "删除于 {time}"
+    "deletedAt": "删除于 {time}",
+    "deletedInfo": "删除于 {time} · 剩余 {days} 天"
   },
   "batch": {
     "selectAll": "全选",
+    "batchManage": "批量管理",
     "clearSelection": "清空",
     "exportSelected": "导出选中",
     "deleteSelected": "删除选中",
     "restoreSelected": "恢复选中",
     "permanentDeleteSelected": "彻底删除",
     "cancel": "取消",
-    "selected": "已选择 {count} 项"
+    "selected": "已选择 {count} 项",
+    "confirmBatchDelete": "确定要将选中的 {count} 条记录移入回收站吗？",
+    "confirmBatchPermanentDelete": "确定要永久删除选中的 {count} 条记录吗？此操作不可恢复！"
   },
   "settings": {
     "appearance": "外观",
@@ -66,10 +79,48 @@
     "exportMarkdown": "导出为 Markdown",
     "importFile": "选择文件",
     "importSuccess": "成功导入 {count} 条记录",
-    "close": "关闭"
+    "close": "关闭",
+    "totalRecords": "总记录数",
+    "tagCount": "标签数",
+    "todayNew": "今日新增",
+    "selectFormat": "选择格式",
+    "filterConditions": "筛选条件（可选）",
+    "date": "日期",
+    "startDate": "开始日期",
+    "endDate": "结束日期",
+    "to": "至",
+    "clearFilter": "清除筛选",
+    "exportPreview": "将导出全部 {count} 条记录",
+    "exportPreviewFiltered": "将导出筛选后的记录",
+    "exporting": "导出中...",
+    "startExport": "开始导出",
+    "exportSuccess": "导出成功，共 {count} 条记录",
+    "exportFailed": "导出失败: {error}",
+    "clickSelectFile": "点击选择文件",
+    "supportJson": "支持 .json 格式",
+    "confirmImport": "确认导入",
+    "importing": "导入中...",
+    "importSuccessCount": "导入成功，共 {count} 条记录",
+    "importFailed": "导入失败: {error}",
+    "invalidFile": "无效的文件格式",
+    "invalidImportData": "无效的导入数据格式",
+    "records": "条记录",
+    "fileName": "文件名",
+    "cancelImport": "取消导入"
   },
   "search": {
     "placeholder": "搜索记录...",
     "clear": "清除"
+  },
+  "heatmap": {
+    "title": "热力图",
+    "records": "{count} 条记录",
+    "less": "少",
+    "more": "多"
+  },
+  "home": {
+    "trashTitle": "回收站标题",
+    "allRecords": "全部记录",
+    "searchPlaceholder": "搜索..."
   }
 }

@@ -23,6 +23,11 @@ import { writeTextFile } from "@tauri-apps/plugin-fs";
 
 const PAGE_SIZE = 20;
 
+// 默认确认函数（浏览器原生 confirm）
+const defaultConfirm = (message: string): boolean => {
+  return confirm(message);
+};
+
 export const useMemoStore = defineStore("memo", () => {
   const memos = ref<Memo[]>([]);
   const loading = ref(false);
@@ -71,11 +76,15 @@ export const useMemoStore = defineStore("memo", () => {
   }
 
   // 批量删除（软删除到回收站）
-  async function batchDeleteMemo() {
+  async function batchDeleteMemo(confirmFn?: (message: string) => boolean | Promise<boolean>) {
     if (selectedIds.value.size === 0) return;
 
     const count = selectedIds.value.size;
-    if (!confirm(`确定要将选中的 ${count} 条记录移入回收站吗？`)) {
+    const confirmFunc = confirmFn || defaultConfirm;
+
+    // 动态导入 i18n 函数需要在组件中传入
+    const message = `batchDeleteConfirm|${count}`;
+    if (!await confirmFunc(message)) {
       return;
     }
 
@@ -281,11 +290,14 @@ export const useMemoStore = defineStore("memo", () => {
   }
 
   // 批量永久删除
-  async function batchPermanentDelete() {
+  async function batchPermanentDelete(confirmFn?: (message: string) => boolean | Promise<boolean>) {
     if (selectedIds.value.size === 0) return;
 
     const count = selectedIds.value.size;
-    if (!confirm(`确定要永久删除选中的 ${count} 条记录吗？此操作不可恢复！`)) {
+    const confirmFunc = confirmFn || defaultConfirm;
+
+    const message = `batchPermanentDeleteConfirm|${count}`;
+    if (!await confirmFunc(message)) {
       return;
     }
 
@@ -326,10 +338,13 @@ export const useMemoStore = defineStore("memo", () => {
   }
 
   // 清空回收站
-  async function cleanTrash() {
+  async function cleanTrash(confirmFn?: (message: string) => boolean | Promise<boolean>) {
     if (trashCount.value === 0) return;
 
-    if (!confirm(`确定要清空回收站吗？将永久删除 ${trashCount.value} 条记录，此操作不可恢复！`)) {
+    const confirmFunc = confirmFn || defaultConfirm;
+
+    const message = `cleanTrashConfirm|${trashCount.value}`;
+    if (!await confirmFunc(message)) {
       return;
     }
 

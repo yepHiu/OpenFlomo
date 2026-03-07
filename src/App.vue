@@ -2,6 +2,7 @@
 import { onMounted, onUnmounted } from 'vue'
 import { useMemoStore } from './stores/memoStore'
 import { useSettingsStore } from './stores/settingsStore'
+import Toast from 'primevue/toast'
 
 const memoStore = useMemoStore()
 const settingsStore = useSettingsStore()
@@ -30,6 +31,7 @@ onUnmounted(() => {
 </script>
 
 <template>
+  <Toast />
   <router-view />
   <!-- 开发模式水印 -->
   <div v-if="isDev" class="dev-watermark">DEV</div>

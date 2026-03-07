@@ -10,8 +10,12 @@ const memoStore = useMemoStore();
 const searchQuery = ref("");
 const { t } = useI18n();
 
-// 应用启动时清理过期回收站
+// 应用启动时清理过期回收站，并确保数据已加载
 onMounted(async () => {
+  // 如果数据未加载，则加载
+  if (memoStore.memos.length === 0) {
+    await memoStore.fetchMemos();
+  }
   await memoStore.cleanupExpiredTrash();
 });
 
@@ -22,6 +26,31 @@ function handleSearch() {
 function clearSearch() {
   searchQuery.value = "";
   memoStore.setSearch("");
+}
+
+// 确认处理函数 - 解析 store 传入的消息
+async function handleBatchDeleteConfirm(message: string): Promise<boolean> {
+  const [key, count] = message.split('|');
+  if (key === 'batchDeleteConfirm') {
+    return confirm(t('batch.confirmBatchDelete', { count: parseInt(count) }));
+  }
+  return false;
+}
+
+async function handleBatchPermanentDeleteConfirm(message: string): Promise<boolean> {
+  const [key, count] = message.split('|');
+  if (key === 'batchPermanentDeleteConfirm') {
+    return confirm(t('batch.confirmBatchPermanentDelete', { count: parseInt(count) }));
+  }
+  return false;
+}
+
+async function handleCleanTrashConfirm(message: string): Promise<boolean> {
+  const [key, count] = message.split('|');
+  if (key === 'cleanTrashConfirm') {
+    return confirm(t('trash.confirmCleanTrash', { count: parseInt(count) }));
+  }
+  return false;
 }
 </script>
 
@@ -91,7 +120,7 @@ function clearSearch() {
             <button
               class="batch-btn permanent-delete"
               :disabled="memoStore.selectedIds.size === 0"
-              @click="memoStore.batchPermanentDelete"
+              @click="memoStore.batchPermanentDelete(handleBatchPermanentDeleteConfirm)"
             >
               {{ t('batch.permanentDeleteSelected') }}
             </button>
@@ -109,7 +138,7 @@ function clearSearch() {
             <button
               class="batch-btn delete"
               :disabled="memoStore.selectedIds.size === 0"
-              @click="memoStore.batchDeleteMemo"
+              @click="memoStore.batchDeleteMemo(handleBatchDeleteConfirm)"
             >
               {{ t('batch.deleteSelected') }}
             </button>
@@ -123,7 +152,7 @@ function clearSearch() {
       <div v-if="!memoStore.isBatchMode && !memoStore.isTrashMode && memoStore.memos.length > 0" class="batch-entry">
         <button class="batch-entry-btn" @click="memoStore.toggleBatchMode">
           <i class="pi pi-check-square"></i>
-          {{ t('batch.selectAll').replace('全选', '批量管理') }}
+          {{ t('batch.batchManage') }}
         </button>
       </div>
 
@@ -131,9 +160,9 @@ function clearSearch() {
       <div v-if="!memoStore.isBatchMode && memoStore.isTrashMode && memoStore.trashMemos.length > 0" class="batch-entry">
         <button class="batch-entry-btn" @click="memoStore.toggleBatchMode">
           <i class="pi pi-check-square"></i>
-          {{ t('batch.selectAll').replace('全选', '批量管理') }}
+          {{ t('batch.batchManage') }}
         </button>
-        <button class="batch-entry-btn danger" @click="memoStore.cleanTrash">
+        <button class="batch-entry-btn danger" @click="memoStore.cleanTrash(handleCleanTrashConfirm)">
           <i class="pi pi-trash"></i>
           {{ t('trash.cleanTrash') }}
         </button>
@@ -165,7 +194,6 @@ function clearSearch() {
   display: flex;
   flex-direction: column;
   padding: 24px;
-  // 最大宽度限制，超大屏幕时左右留白
   max-width: 900px;
   margin: 0 auto;
   width: 100%;
@@ -264,7 +292,6 @@ function clearSearch() {
   }
 }
 
-// 回收站头部
 .trash-header {
   display: flex;
   flex-direction: column;
@@ -290,7 +317,6 @@ function clearSearch() {
   }
 }
 
-// 批量工具栏（固定不滚动）
 .batch-toolbar-fixed {
   display: flex;
   align-items: center;
@@ -380,7 +406,6 @@ function clearSearch() {
   }
 }
 
-// 批量管理入口按钮
 .batch-entry {
   margin-top: 16px;
   flex-shrink: 0;

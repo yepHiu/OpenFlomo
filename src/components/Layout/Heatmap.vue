@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { useMemoStore } from "../../stores/memoStore";
+import { useI18n } from "vue-i18n";
 
 const memoStore = useMemoStore();
+const { t } = useI18n();
 
 // 生成过去40天的日期数组 (8x5网格)
 const days = computed(() => {
@@ -38,7 +40,7 @@ function formatDate(dateStr: string): string {
 <template>
   <div class="heatmap-container">
     <div class="heatmap-header">
-      <span class="heatmap-title">热力图</span>
+      <span class="heatmap-title">{{ t('heatmap.title') }}</span>
     </div>
 
     <div class="heatmap-grid">
@@ -47,12 +49,12 @@ function formatDate(dateStr: string): string {
         :key="day.date"
         class="heatmap-cell"
         :class="['level-' + day.level]"
-        :title="`${formatDate(day.date)}: ${day.count} 条记录`"
+        :title="`${formatDate(day.date)}: ${t('heatmap.records', { count: day.count })}`"
       ></div>
     </div>
 
     <div class="heatmap-legend">
-      <span class="legend-label">少</span>
+      <span class="legend-label">{{ t('heatmap.less') }}</span>
       <div class="legend-cells">
         <div class="heatmap-cell level-0"></div>
         <div class="heatmap-cell level-1"></div>
@@ -60,7 +62,7 @@ function formatDate(dateStr: string): string {
         <div class="heatmap-cell level-3"></div>
         <div class="heatmap-cell level-4"></div>
       </div>
-      <span class="legend-label">多</span>
+      <span class="legend-label">{{ t('heatmap.more') }}</span>
     </div>
   </div>
 </template>

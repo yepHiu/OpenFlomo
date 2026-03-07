@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, watch } from "vue";
 import { useMemoStore } from "../../stores/memoStore";
+import { useI18n } from "vue-i18n";
 import type { Memo } from "../../services/database";
 
 const props = defineProps<{
@@ -14,6 +15,7 @@ const emit = defineEmits<{
 }>();
 
 const memoStore = useMemoStore();
+const { t } = useI18n();
 const editContent = ref("");
 const editTags = ref("");
 const isSaving = ref(false);
@@ -53,7 +55,7 @@ function handleClose() {
     <div v-if="visible" class="dialog-overlay" @click="handleClose">
       <div class="dialog-content" @click.stop>
         <div class="dialog-header">
-          <h2>编辑记录</h2>
+          <h2>{{ t('memo.edit') }}</h2>
           <button class="close-btn" @click="handleClose">
             <i class="pi pi-times"></i>
           </button>
@@ -62,16 +64,16 @@ function handleClose() {
         <div class="dialog-body">
           <textarea
             v-model="editContent"
-            placeholder="记录内容..."
+            :placeholder="t('memo.editContent')"
             rows="6"
           ></textarea>
 
           <div class="tags-section">
-            <label>标签（用逗号分隔）</label>
+            <label>{{ t('memo.editTags') }}</label>
             <input
               v-model="editTags"
               type="text"
-              placeholder="例如: 学习, 工作, 灵感"
+              :placeholder="t('memo.editTags')"
             />
             <div v-if="editTags" class="tags-preview">
               <span v-for="tag in editTags.split(',')" :key="tag" class="tag">
@@ -82,13 +84,13 @@ function handleClose() {
         </div>
 
         <div class="dialog-footer">
-          <button class="btn-cancel" @click="handleClose">取消</button>
+          <button class="btn-cancel" @click="handleClose">{{ t('batch.cancel') }}</button>
           <button
             class="btn-save"
             :disabled="!editContent.trim() || isSaving"
             @click="handleSave"
           >
-            {{ isSaving ? "保存中..." : "保存" }}
+            {{ isSaving ? t('data.exporting') : t('memo.saveEdit') }}
           </button>
         </div>
       </div>
