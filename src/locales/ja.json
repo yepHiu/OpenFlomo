@@ -58,7 +58,9 @@
     "confirmBatchPermanentDelete": "選択した {count} 件の記録を完全に削除しますか？この操作は元に戻せません！"
   },
   "settings": {
+    "general": "一般設定",
     "appearance": "外観",
+    "autoStart": "自動起動",
     "darkMode": "ダークモード",
     "language": "言語",
     "about": "について",

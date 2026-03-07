@@ -58,7 +58,9 @@
     "confirmBatchPermanentDelete": "Permanently delete {count} selected records? This action cannot be undone!"
   },
   "settings": {
+    "general": "General",
     "appearance": "Appearance",
+    "autoStart": "Auto Start",
     "darkMode": "Dark Mode",
     "language": "Language",
     "about": "About",

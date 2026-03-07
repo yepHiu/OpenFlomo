@@ -60,7 +60,9 @@
     "confirmBatchPermanentDelete": "确定要永久删除选中的 {count} 条记录吗？此操作不可恢复！"
   },
   "settings": {
+    "general": "常规设置",
     "appearance": "外观",
+    "autoStart": "开机自启动",
     "darkMode": "深色模式",
     "language": "语言",
     "about": "关于",

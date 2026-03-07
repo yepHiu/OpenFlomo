@@ -37,6 +37,26 @@ function handleLanguageChange(value: string) {
     </div>
 
     <div class="settings-content">
+      <!-- 常规设置 -->
+      <div class="settings-section">
+        <h2>{{ t('settings.general') }}</h2>
+        <div class="setting-item">
+          <div class="setting-info">
+            <i class="pi pi-power-off"></i>
+            <span>{{ t('settings.autoStart') }}</span>
+          </div>
+          <label class="toggle">
+            <input
+              type="checkbox"
+              :checked="settingsStore.isAutoStart"
+              @change="settingsStore.toggleAutoStart()"
+            />
+            <span class="slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <!-- 外观设置 -->
       <div class="settings-section">
         <h2>{{ t('settings.appearance') }}</h2>
         <div class="setting-item">

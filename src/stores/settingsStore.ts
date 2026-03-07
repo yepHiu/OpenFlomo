@@ -1,6 +1,7 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
 import { setLocale, getLocale } from "../i18n";
+import { isEnabled, enable, disable } from "@tauri-apps/plugin-autostart";
 
 // 检测操作系统
 function getIsMac(): boolean {
@@ -38,6 +39,33 @@ export const useSettingsStore = defineStore("settings", () => {
 
   // 操作系统
   const isMac = ref(getIsMac());
+
+  // 开机自启动状态
+  const isAutoStart = ref(false);
+
+  // 初始化时检查自启动状态
+  async function checkAutoStart() {
+    try {
+      isAutoStart.value = await isEnabled();
+    } catch (e) {
+      console.error("[Settings] Failed to check autostart:", e);
+    }
+  }
+
+  // 切换自启动状态
+  async function toggleAutoStart() {
+    try {
+      if (isAutoStart.value) {
+        await disable();
+        isAutoStart.value = false;
+      } else {
+        await enable();
+        isAutoStart.value = true;
+      }
+    } catch (e) {
+      console.error("[Settings] Failed to toggle autostart:", e);
+    }
+  }
 
   // 切换深色模式
   function toggleDarkMode() {
@@ -91,14 +119,19 @@ export const useSettingsStore = defineStore("settings", () => {
   // 初始化时应用主题
   initTheme();
 
+  // 检查自启动状态
+  checkAutoStart();
+
   return {
     isDarkMode,
     version,
     locale,
     isMac,
+    isAutoStart,
     toggleDarkMode,
     applyTheme,
     toggleLocale,
     setAppLocale,
+    toggleAutoStart,
   };
 });
