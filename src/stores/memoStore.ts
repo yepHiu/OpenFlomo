@@ -21,6 +21,12 @@ import {
 import { save } from "@tauri-apps/plugin-dialog";
 import { writeTextFile } from "@tauri-apps/plugin-fs";
 
+// 开发环境日志
+const isDev = import.meta.env.DEV;
+const devLog = (fn: () => void) => {
+  if (isDev) fn();
+};
+
 const PAGE_SIZE = 20;
 
 // 默认确认函数（浏览器原生 confirm）
@@ -89,9 +95,8 @@ export const useMemoStore = defineStore("memo", () => {
     }
 
     const idsToDelete = Array.from(selectedIds.value);
-    for (const id of idsToDelete) {
-      await softDeleteMemo(id);
-    }
+    // 使用 Promise.all 并行删除
+    await Promise.all(idsToDelete.map(id => softDeleteMemo(id)));
 
     // 从当前列表中移除
     memos.value = memos.value.filter((m) => !selectedIds.value.has(m.id));
@@ -182,21 +187,21 @@ export const useMemoStore = defineStore("memo", () => {
   // 获取所有 memos
   async function fetchMemos() {
     loading.value = true;
-    console.log("[Store] Starting fetchMemos...");
+    devLog(() => console.log("[Store] Starting fetchMemos..."));
     try {
       // 获取总数
       totalCount.value = await getMemoCount();
       // 初始加载第一页
       memos.value = await getMemosByPage(0, PAGE_SIZE);
       hasMore.value = memos.value.length < totalCount.value;
-      console.log("[Store] Memos loaded:", memos.value.length, "total:", totalCount.value);
+      devLog(() => console.log("[Store] Memos loaded:", memos.value.length, "total:", totalCount.value));
       todayCount.value = await getTodayCount();
-      console.log("[Store] Today count:", todayCount.value);
+      devLog(() => console.log("[Store] Today count:", todayCount.value));
       heatmapData.value = await getHeatmapData();
-      console.log("[Store] Heatmap data:", heatmapData.value.length);
+      devLog(() => console.log("[Store] Heatmap data:", heatmapData.value.length));
       // 加载回收站数量
       trashCount.value = await getTrashCount();
-      console.log("[Store] Trash count:", trashCount.value);
+      devLog(() => console.log("[Store] Trash count:", trashCount.value));
     } catch (e) {
       console.error("[Store] Error fetching memos:", e);
     } finally {
@@ -209,12 +214,12 @@ export const useMemoStore = defineStore("memo", () => {
     if (loadingMore.value || !hasMore.value) return;
 
     loadingMore.value = true;
-    console.log("[Store] Loading more memos...");
+    devLog(() => console.log("[Store] Loading more memos..."));
     try {
       const newMemos = await getMemosByPage(memos.value.length, PAGE_SIZE);
       memos.value = [...memos.value, ...newMemos];
       hasMore.value = memos.value.length < totalCount.value;
-      console.log("[Store] More memos loaded:", newMemos.length, "hasMore:", hasMore.value);
+      devLog(() => console.log("[Store] More memos loaded:", newMemos.length, "hasMore:", hasMore.value));
     } catch (e) {
       console.error("[Store] Error loading more memos:", e);
     } finally {
@@ -271,9 +276,8 @@ export const useMemoStore = defineStore("memo", () => {
     if (selectedIds.value.size === 0) return;
 
     const idsToRestore = Array.from(selectedIds.value);
-    for (const id of idsToRestore) {
-      await restoreMemo(id); // 使用数据库层的 restoreMemo
-    }
+    // 使用 Promise.all 并行恢复
+    await Promise.all(idsToRestore.map(id => restoreMemo(id)));
 
     // 从回收站列表中移除
     trashMemos.value = trashMemos.value.filter((m) => !selectedIds.value.has(m.id));
@@ -302,9 +306,8 @@ export const useMemoStore = defineStore("memo", () => {
     }
 
     const idsToDelete = Array.from(selectedIds.value);
-    for (const id of idsToDelete) {
-      await permanentDeleteMemo(id);
-    }
+    // 使用 Promise.all 并行永久删除
+    await Promise.all(idsToDelete.map(id => permanentDeleteMemo(id)));
 
     // 从回收站列表中移除
     trashMemos.value = trashMemos.value.filter((m) => !selectedIds.value.has(m.id));
@@ -349,10 +352,8 @@ export const useMemoStore = defineStore("memo", () => {
     }
 
     try {
-      // 永久删除所有回收站中的 memo
-      for (const memo of trashMemos.value) {
-        await permanentDeleteMemo(memo.id);
-      }
+      // 使用 Promise.all 并行永久删除所有回收站中的 memo
+      await Promise.all(trashMemos.value.map(memo => permanentDeleteMemo(memo.id)));
       trashMemos.value = [];
       trashCount.value = 0;
     } catch (e) {
@@ -365,7 +366,7 @@ export const useMemoStore = defineStore("memo", () => {
     try {
       const cleanedCount = await cleanExpiredTrash();
       if (cleanedCount > 0) {
-        console.log("[Store] Cleaned expired trash:", cleanedCount);
+        devLog(() => console.log("[Store] Cleaned expired trash:", cleanedCount));
         trashCount.value = await getTrashCount();
       }
     } catch (e) {

@@ -2,8 +2,8 @@
 
 > 记录项目代码中需要优化的地方及改进建议。
 
-**文档版本**：v1.2
-**更新日期**：2026-03-07
+**文档版本**：v1.3
+**更新日期**：2026-03-08
 
 ---
 
@@ -111,13 +111,13 @@
 
 ### 中优先级
 
-| 编号 | 任务 | 文件 |
-|------|------|------|
-| P7 | 移除/条件化 console.log | src/services/database.ts |
-| P8 | 移除/条件化 console.log | src/stores/memoStore.ts |
-| P9 | 批量操作并行化 | src/stores/memoStore.ts |
-| P10 | 搜索添加 debounce | src/views/HomeView.vue |
-| P12 | 替换 alert 为 Toast | 多个文件 |
+| 编号 | 任务 | 文件 | 状态 |
+|------|------|------|------|
+| P7 | 移除/条件化 console.log | src/services/database.ts | ✅ |
+| P8 | 移除/条件化 console.log | src/stores/memoStore.ts | ✅ |
+| P9 | 批量操作并行化 | src/stores/memoStore.ts | ✅ |
+| P10 | 搜索添加 debounce | src/views/HomeView.vue | ✅ |
+| P12 | 替换 alert 为 Toast | 多个文件 | ✅ (无 alert 需替换) |
 
 ### 低优先级
 
@@ -136,3 +136,4 @@
 | v1.0 | 2026-03-07 | 初版：代码优化建议清单 |
 | v1.1 | 2026-03-07 | 完成 P1-P6 高优先级国际化任务 |
 | v1.2 | 2026-03-07 | 完成 P11 TagSidebar 国际化；添加日语支持 |
+| v1.3 | 2026-03-08 | 完成 P7-P10, P12 中优先级优化任务 |

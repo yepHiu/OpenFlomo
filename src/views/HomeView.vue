@@ -10,6 +10,19 @@ const memoStore = useMemoStore();
 const searchQuery = ref("");
 const { t } = useI18n();
 
+// 防抖定时器
+let searchDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+// 防抖搜索
+function debounceSearch() {
+  if (searchDebounceTimer) {
+    clearTimeout(searchDebounceTimer);
+  }
+  searchDebounceTimer = setTimeout(() => {
+    memoStore.setSearch(searchQuery.value);
+  }, 300);
+}
+
 // 应用启动时清理过期回收站，并确保数据已加载
 onMounted(async () => {
   // 如果数据未加载，则加载
@@ -20,10 +33,14 @@ onMounted(async () => {
 });
 
 function handleSearch() {
-  memoStore.setSearch(searchQuery.value);
+  debounceSearch();
 }
 
 function clearSearch() {
+  if (searchDebounceTimer) {
+    clearTimeout(searchDebounceTimer);
+    searchDebounceTimer = null;
+  }
   searchQuery.value = "";
   memoStore.setSearch("");
 }

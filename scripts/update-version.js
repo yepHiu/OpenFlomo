@@ -9,8 +9,10 @@ function generateVersion() {
   const day = String(now.getDate()).padStart(2, '0');
   const time = String(now.getTime()).slice(-6); // 取后6位作为编译时间标识
 
-  // 检测是否为 release 构建
-  const isRelease = process.argv.includes('--release');
+  // 检测是否为 release 构建（检查命令行参数）
+  const isRelease = process.argv.includes('--release') ||
+                    process.argv.includes('build') ||
+                    process.argv.includes('bundle');
 
   const suffix = isRelease ? 'release' : 'dev';
   return `${year}.${month}.${day}-${time}-${suffix}`;

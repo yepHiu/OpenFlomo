@@ -16,21 +16,38 @@ OpenFlomo is an open-source alternative to Flomo (浮墨笔记), a lightweight n
 - **Styling**: SCSS
 - **i18n**: vue-i18n
 
-## Commands
+## Commands (also see package.json scripts)
+
+### Environment Requirements
+- Node.js 18+
+- Rust 1.70+
+- npm or yarn
 
 ```bash
 # Install dependencies
 npm install
 
-# Run development server (auto-updates version)
-npm run tauri dev
+# Run full Tauri dev (frontend + desktop, auto-updates version)
+npm run tauri:dev
+
+# Run frontend only (Vite dev server)
+npm run dev
+
+# Preview production build locally
+npm run preview
 
 # Build for production (includes TypeScript check)
-npm run tauri build
+npm run tauri:build
 
 # Type check only
 npm run build
 ```
+
+### Auto-Versioning
+Version is auto-generated via `scripts/update-version.js` in format: `YYYY.MM.DD-commitHash-dev` (or `release` for production builds)
+
+### Testing & Linting
+No test framework or ESLint configured currently.
 
 ## Architecture
 

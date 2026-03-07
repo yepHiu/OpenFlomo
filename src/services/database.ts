@@ -1,6 +1,12 @@
 import Database from "@tauri-apps/plugin-sql";
 import { appDataDir, join } from "@tauri-apps/api/path";
 
+// 开发环境日志
+const isDev = import.meta.env.DEV;
+const devLog = (fn: () => void) => {
+  if (isDev) fn();
+};
+
 export interface Memo {
   id: number;
   content: string;
@@ -14,22 +20,22 @@ let db: Database | null = null;
 
 async function getDb(): Promise<Database> {
   if (!db) {
-    console.log("[DB] Loading database...");
+    devLog(() => console.log("[DB] Loading database..."));
     try {
       // 使用与后端相同的应用数据目录
       const dataDir = await appDataDir();
       // 根据环境使用不同数据库名（与后端保持一致）
-      const isDev = import.meta.env.DEV;
-      const dbName = isDev ? "openflomo_dev.db" : "openflomo.db";
+      const isDevEnv = import.meta.env.DEV;
+      const dbName = isDevEnv ? "openflomo_dev.db" : "openflomo.db";
       const dbPath = await join(dataDir, dbName);
-      console.log("[DB] Database path:", dbPath);
-      console.log("[DB] Mode:", isDev ? "Development" : "Production");
+      devLog(() => console.log("[DB] Database path:", dbPath));
+      devLog(() => console.log("[DB] Mode:", isDevEnv ? "Development" : "Production"));
       db = await Database.load(`sqlite:${dbPath}`);
 
       // 初始化表（如果不存在）
       await initTable();
 
-      console.log("[DB] Database loaded successfully");
+      devLog(() => console.log("[DB] Database loaded successfully"));
     } catch (e) {
       console.error("[DB] Failed to load database:", e);
       throw new Error("数据库加载失败: " + e);
@@ -60,10 +66,10 @@ async function initTable() {
       await db.execute("SELECT deleted_at FROM memos LIMIT 1");
     } catch {
       await db.execute("ALTER TABLE memos ADD COLUMN deleted_at TEXT");
-      console.log("[DB] Added deleted_at column");
+      devLog(() => console.log("[DB] Added deleted_at column"));
     }
 
-    console.log("[DB] Table initialized");
+    devLog(() => console.log("[DB] Table initialized"));
   } catch (e) {
     console.error("[DB] Failed to init table:", e);
   }
@@ -71,13 +77,13 @@ async function initTable() {
 
 // 获取所有未删除的 memo
 export async function getAllMemos(): Promise<Memo[]> {
-  console.log("[DB] Getting all memos...");
+  devLog(() => console.log("[DB] Getting all memos..."));
   const database = await getDb();
   try {
     const result = await database.select<Memo[]>(
       "SELECT * FROM memos WHERE deleted_at IS NULL ORDER BY created_at DESC"
     );
-    console.log("[DB] Memos fetched:", result.length, result);
+    devLog(() => console.log("[DB] Memos fetched:", result.length, result));
     return result;
   } catch (e) {
     console.error("[DB] Failed to get memos:", e);
@@ -87,14 +93,14 @@ export async function getAllMemos(): Promise<Memo[]> {
 
 // 分页获取未删除的 memo
 export async function getMemosByPage(offset: number, limit: number): Promise<Memo[]> {
-  console.log("[DB] Getting memos by page:", offset, limit);
+  devLog(() => console.log("[DB] Getting memos by page:", offset, limit));
   const database = await getDb();
   try {
     const result = await database.select<Memo[]>(
       "SELECT * FROM memos WHERE deleted_at IS NULL ORDER BY created_at DESC LIMIT ? OFFSET ?",
       [limit, offset]
     );
-    console.log("[DB] Memos fetched:", result.length, "offset:", offset);
+    devLog(() => console.log("[DB] Memos fetched:", result.length, "offset:", offset));
     return result;
   } catch (e) {
     console.error("[DB] Failed to get memos by page:", e);
@@ -176,7 +182,7 @@ export async function getMemosByFilter(options: ExportOptions): Promise<Memo[]> 
 
   try {
     const result = await database.select<Memo[]>(sql, params);
-    console.log("[DB] Memos fetched by filter:", result.length);
+    devLog(() => console.log("[DB] Memos fetched by filter:", result.length));
     return result;
   } catch (e) {
     console.error("[DB] Failed to get memos by filter:", e);
@@ -207,7 +213,7 @@ function formatAsMarkdown(memos: Memo[]): string {
 
 // 创建 memo
 export async function createMemo(content: string, tags: string): Promise<Memo> {
-  console.log("[DB] Creating memo:", content, tags);
+  devLog(() => console.log("[DB] Creating memo:", content, tags));
   const database = await getDb();
   const now = new Date().toISOString();
 
@@ -216,7 +222,7 @@ export async function createMemo(content: string, tags: string): Promise<Memo> {
       "INSERT INTO memos (content, tags, created_at, updated_at) VALUES (?, ?, ?, ?)",
       [content, tags, now, now]
     );
-    console.log("[DB] Memo created, id:", result.lastInsertId);
+    devLog(() => console.log("[DB] Memo created, id:", result.lastInsertId));
 
     const newMemo: Memo = {
       id: result.lastInsertId as number,
@@ -275,13 +281,13 @@ export async function permanentDeleteMemo(id: number): Promise<void> {
 
 // 获取回收站中的 memo
 export async function getTrashMemos(): Promise<Memo[]> {
-  console.log("[DB] Getting trash memos...");
+  devLog(() => console.log("[DB] Getting trash memos..."));
   const database = await getDb();
   try {
     const result = await database.select<Memo[]>(
       "SELECT * FROM memos WHERE deleted_at IS NOT NULL ORDER BY deleted_at DESC"
     );
-    console.log("[DB] Trash memos fetched:", result.length);
+    devLog(() => console.log("[DB] Trash memos fetched:", result.length));
     return result;
   } catch (e) {
     console.error("[DB] Failed to get trash memos:", e);
@@ -315,7 +321,7 @@ export async function cleanExpiredTrash(): Promise<number> {
       "DELETE FROM memos WHERE deleted_at IS NOT NULL AND deleted_at < ?",
       [expiredDate]
     );
-    console.log("[DB] Cleaned expired trash:", result.rowsAffected);
+    devLog(() => console.log("[DB] Cleaned expired trash:", result.rowsAffected));
     return result.rowsAffected;
   } catch (e) {
     console.error("[DB] Failed to clean expired trash:", e);

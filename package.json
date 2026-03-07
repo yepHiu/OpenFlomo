@@ -1,13 +1,13 @@
 {
   "name": "openflomo",
   "private": true,
-  "version": "2026.03.06-329530-dev",
+  "version": "2026.03.08-962341-dev",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc --noEmit && vite build",
     "preview": "vite preview",
-    "tauri": "tauri",
+    "tauri": "node scripts/update-version.js && tauri",
     "tauri:dev": "node scripts/update-version.js && tauri dev",
     "tauri:build": "node scripts/update-version.js --release && tauri build"
   },
