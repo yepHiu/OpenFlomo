@@ -204,10 +204,10 @@ html, body, #app {
   overflow-y: auto;
 }
 
-/* 滚动条美化 */
+/* 滚动条美化 - 淡灰色，自动隐藏 */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -215,12 +215,42 @@ html, body, #app {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(79, 195, 247, 0.4);
-  border-radius: 4px;
+  background: #cbd5e1;
+  border-radius: 3px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
 
   &:hover {
-    background: rgba(79, 195, 247, 0.6);
+    background: #94a3b8;
   }
+}
+
+/* 滚动时显示滚动条 */
+::-webkit-scrollbar-thumb {
+  /* 默认隐藏 */
+}
+
+/* 当滚动区域有内容时可以滚动 */
+.overflow-scroll,
+.scrollable,
+.content-scrollable,
+.settings-content {
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* 滚动时显示滚动条 */
+.overflow-scroll:hover,
+.scrollable:hover,
+.content-scrollable:hover,
+.settings-content:hover {
+  /* Webkit */
+}
+
+* {
+  /* Firefox */
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
 }
 
 // 统计卡片

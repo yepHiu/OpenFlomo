@@ -36,44 +36,45 @@ function handleLanguageChange(value: string) {
       <h1>{{ t('app.settings') }}</h1>
     </div>
 
-    <div class="settings-content">
-      <!-- 常规设置 -->
-      <div class="settings-section">
-        <h2>{{ t('settings.general') }}</h2>
-        <div class="setting-item">
-          <div class="setting-info">
-            <i class="pi pi-power-off"></i>
-            <span>{{ t('settings.autoStart') }}</span>
+    <div class="settings-scroll-wrapper">
+      <div class="settings-content">
+        <!-- 常规设置 -->
+        <div class="settings-section">
+          <h2>{{ t('settings.general') }}</h2>
+          <div class="setting-item">
+            <div class="setting-info">
+              <i class="pi pi-power-off"></i>
+              <span>{{ t('settings.autoStart') }}</span>
+            </div>
+            <label class="toggle">
+              <input
+                type="checkbox"
+                :checked="settingsStore.isAutoStart"
+                @change="settingsStore.toggleAutoStart()"
+              />
+              <span class="slider"></span>
+            </label>
           </div>
-          <label class="toggle">
-            <input
-              type="checkbox"
-              :checked="settingsStore.isAutoStart"
-              @change="settingsStore.toggleAutoStart()"
-            />
-            <span class="slider"></span>
-          </label>
         </div>
-      </div>
 
-      <!-- 外观设置 -->
-      <div class="settings-section">
-        <h2>{{ t('settings.appearance') }}</h2>
-        <div class="setting-item">
-          <div class="setting-info">
-            <i class="pi pi-moon"></i>
-            <span>{{ t('settings.darkMode') }}</span>
+        <!-- 外观设置 -->
+        <div class="settings-section">
+          <h2>{{ t('settings.appearance') }}</h2>
+          <div class="setting-item">
+            <div class="setting-info">
+              <i class="pi pi-moon"></i>
+              <span>{{ t('settings.darkMode') }}</span>
+            </div>
+            <label class="toggle">
+              <input
+                type="checkbox"
+                :checked="settingsStore.isDarkMode"
+                @change="settingsStore.toggleDarkMode()"
+              />
+              <span class="slider"></span>
+            </label>
           </div>
-          <label class="toggle">
-            <input
-              type="checkbox"
-              :checked="settingsStore.isDarkMode"
-              @change="settingsStore.toggleDarkMode()"
-            />
-            <span class="slider"></span>
-          </label>
-        </div>
-        <div class="setting-item">
+          <div class="setting-item">
           <div class="setting-info">
             <i class="pi pi-globe"></i>
             <span>{{ t('settings.language') }}</span>
@@ -134,6 +135,7 @@ function handleLanguageChange(value: string) {
           <i class="pi pi-chevron-right arrow"></i>
         </div>
       </div>
+      </div>
     </div>
 
     <!-- 数据管理浮窗 -->
@@ -146,13 +148,16 @@ function handleLanguageChange(value: string) {
   max-width: 600px;
   margin: 0 auto;
   padding: 24px;
+  display: flex;
+  flex-direction: column;
 }
 
 .settings-header {
   display: flex;
   align-items: center;
   gap: 16px;
-  margin-bottom: 32px;
+  margin-bottom: 24px;
+  flex-shrink: 0;
 
   .back-btn {
     width: 40px;
@@ -181,6 +186,14 @@ function handleLanguageChange(value: string) {
     font-size: 24px;
     font-weight: 600;
   }
+}
+
+.settings-scroll-wrapper {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  margin: 0 -24px -24px;
+  padding: 0 24px 24px;
 }
 
 .settings-content {

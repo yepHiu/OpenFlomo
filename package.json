@@ -1,7 +1,7 @@
 {
   "name": "openflomo",
   "private": true,
-  "version": "2026.03.08-780057-dev",
+  "version": "2026.03.08-174036-dev",
   "type": "module",
   "scripts": {
     "dev": "vite",
